@@ -1,0 +1,5 @@
+2026-08-26 SESSION_EXECUTION_AUTHORIZATION: user requested creation,
+standardization, integration and publication of the worktree standard.
+2026-08-26 OBSERVATION: adopted required-checks points at a missing ci.yml.
+2026-08-26 DECISION: repair the repository-owned workflow without modifying
+the hash-pinned governance package or external rulesets.
