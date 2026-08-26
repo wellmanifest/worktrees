@@ -1,0 +1,35 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-003",
+  "summary": "Codify worktree execution boundaries",
+  "workstream": "governance",
+  "classification": {"kind": "FEATURE", "priority": "P1", "origin": "requested"},
+  "allowedPaths": ["project/ticket-003/**", "TODO.md", "project/TICKETS.md", "README.md", "CHANGELOG.md", "docs/STANDARD.md", "docs/ARCHITECTURE.md"],
+  "forbiddenPaths": ["project/ticket-*/user-*.md"],
+  "stacks": [],
+  "dependsOn": [],
+  "conflictsWith": ["ticket-001"],
+  "integrationTicket": null,
+  "placement": {"home": "wellmanifest", "shape": "domain_pack", "adopt": []},
+  "delivery": {
+    "acceptedBaseSha": "bad8fab4ef96e770ccc4e4089bb4a3d623c1651a",
+    "targetBranch": "main",
+    "outcome": "Separate worktree placement from Git lifecycle and define lease-aware execution boundaries.",
+    "nonGoals": ["Delete existing worktrees", "Own branch disposition", "Execute merges"],
+    "complexity": "M",
+    "estimatedMinutes": 20,
+    "budgets": {"maxImplementationFiles": 10, "maxAffectedComponents": 3, "maxPublicInterfaceChanges": 2, "maxRuntimeDependencies": 0},
+    "architecture": {
+      "status": "accepted",
+      "decision": "Keep one canonical placement pack and route lifecycle and merge decisions to their owning standards.",
+      "components": [{"name": "normative-docs", "paths": ["README.md", "docs/**"]}, {"name": "delivery-record", "paths": ["project/ticket-003/**", "CHANGELOG.md"]}],
+      "responsibilityChanges": true,
+      "interfaceChanges": ["Lease-aware worktree execution boundary"],
+      "dataChanges": [],
+      "ui": {"impact": "none", "states": [], "evidence": []},
+      "rollback": "Revert the ticket commit before release; no worktree is moved automatically."
+    },
+    "runtimeDependencies": [],
+    "validation": [{"criterion": "AC-01", "commands": ["./project/governance-check.sh --actor agent", "git diff --check"], "evidence": "Repository gates pass before protected publication."}]
+  }
+}

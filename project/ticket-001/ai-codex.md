@@ -27,10 +27,6 @@ ticket lifecycle responsibilities.
   lease locations and ticket branch names.
 - Added a machine-readable schema and dependency-free conformance CLI.
 - Added unit coverage for POSIX, Windows and known layout drift patterns.
-- Distinguished writable delivery worktrees from read-only validation and
-  deployment snapshots and from non-Git runtime data.
-- Added single-writer, publication-freeze and terminal cleanup handoff rules
-  without taking ownership of Git, merge or ticket lifecycle semantics.
 
 ## Blockers
 
