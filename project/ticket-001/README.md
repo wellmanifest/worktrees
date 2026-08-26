@@ -2,11 +2,15 @@
 
 - **ID**: ticket-001
 - **Owner**: unresolved:human
-- **Status**: IN_PROGRESS
+- **Status**: BLOCKED
 - **Workflow state**: EDIT
 - **Created**: 2026-08-26
 
 ## Goal and scope
+
+Lifecycle note: the original delivery was merged by PR #3. Further execution
+authority moved to ticket-003; this historical ticket must not claim an active
+writer lease.
 
 Define a portable, machine-checkable placement contract for temporary linked
 Git worktrees used to deliver ticket branches and pull requests. The contract
