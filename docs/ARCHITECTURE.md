@@ -19,3 +19,14 @@ controls.
 The layout record is the boundary interface. Consumers should persist its
 `wellmanifest.worktrees/v1` representation beside the receipt for worktree
 creation, use or cleanup.
+
+## Deliberate non-ownership
+
+The pack does not duplicate Git policy, merge policy or ticket policy. It
+references their stable pack identifiers and supplies only the path facts they
+consume. Vendored bytes in `wellmanifest/new-project` are immutable,
+digest-bound adoption projections, not a second source of truth.
+
+`wellmanifest/git` is a navigation alias for `wellmanifest/git-lifecycle`.
+Creating both as independent standards would make branch semantics ambiguous
+and is therefore forbidden by the composition map in `wellmanifest/new-project`.
