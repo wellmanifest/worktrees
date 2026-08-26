@@ -8,16 +8,25 @@ ticket: ticket-001
 
 ## Understanding
 
-To be completed after reading human-owned input and the ticket preprompt.
+The organization currently uses repo-local `.worktrees`, a parallel
+`subactor-worktrees` root, workspace-level `.worktrees`, and accidentally nested
+roots. The standard must select one portable layout without absorbing Git or
+ticket lifecycle responsibilities.
 
 ## Execution plan
 
-1. Validate the ticket scope and acceptance evidence before implementation.
+1. Specify the canonical workspace-level layout and ownership boundaries.
+2. Publish a schema and pure planner/validator for POSIX and Windows paths.
+3. Prove representative valid and invalid layouts and run governance checks.
 
 ## Actual changes
 
 - Initialized the bounded ticket and recorded SESSION_EXECUTION_AUTHORIZATION
   from the request to execute this work.
+- Defined a workspace-level `.worktrees` root, deterministic worktree names,
+  lease locations and ticket branch names.
+- Added a machine-readable schema and dependency-free conformance CLI.
+- Added unit coverage for POSIX, Windows and known layout drift patterns.
 
 ## Blockers
 

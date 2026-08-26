@@ -4,3 +4,4 @@
 
 - Initial governance scaffold created.
 - No human participant identity or content was generated.
+- Added the canonical worktree placement contract, schema and conformance tool.

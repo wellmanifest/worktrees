@@ -8,10 +8,70 @@
     "priority": "P1",
     "origin": "requested"
   },
-  "allowedPaths": ["project/ticket-001/**", "TODO.md", "project/TICKETS.md"],
+  "allowedPaths": [
+    "project/ticket-001/**",
+    "TODO.md",
+    "project/TICKETS.md",
+    "VERSION",
+    "docs/STANDARD.md",
+    "docs/ARCHITECTURE.md",
+    "models/worktrees.schema.json",
+    "operations/conformance.py",
+    "operations/conformance_test.py"
+  ],
   "forbiddenPaths": ["project/ticket-*/user-*.md"],
   "stacks": [],
   "dependsOn": [],
   "conflictsWith": [],
-  "integrationTicket": null
+  "integrationTicket": null,
+  "placement": {
+    "home": "wellmanifest",
+    "shape": "domain_pack",
+    "runtimeOwner": "subactor",
+    "adopt": [
+      "wellmanifest/new-project",
+      "wellmanifest/dsl",
+      "wellmanifest/logs"
+    ]
+  },
+  "delivery": {
+    "acceptedBaseSha": "9adf68fa24dd4c49ef87f51cceeb2ac25c0a2442",
+    "targetBranch": "main",
+    "outcome": "Define one versioned and machine-checkable workspace-level placement contract for ticket worktrees.",
+    "nonGoals": [
+      "Execute Git or filesystem effects",
+      "Own ticket or branch lifecycle semantics",
+      "Move or delete existing worktrees"
+    ],
+    "complexity": "M",
+    "estimatedMinutes": 25,
+    "budgets": {
+      "maxImplementationFiles": 5,
+      "maxAffectedComponents": 3,
+      "maxPublicInterfaceChanges": 1,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Publish a data-only domain pack with a layout schema and a pure planner/validator; adopting runtimes retain effect authority.",
+      "components": [
+        {"name": "documentation", "paths": ["docs/**"]},
+        {"name": "model", "paths": ["models/**"]},
+        {"name": "conformance", "paths": ["operations/**"]}
+      ],
+      "responsibilityChanges": true,
+      "interfaceChanges": ["wellmanifest.worktrees/v1 layout record"],
+      "dataChanges": ["Canonical worktree, branch and lease path derivation"],
+      "ui": {"impact": "none", "states": [], "evidence": []},
+      "rollback": "Revert this ticket before adoption; it performs no runtime migration or effect."
+    },
+    "runtimeDependencies": [],
+    "validation": [
+      {"criterion": "AC-01", "commands": ["python3 operations/conformance_test.py"], "evidence": "POSIX and Windows examples pass."},
+      {"criterion": "AC-02", "commands": ["python3 -m json.tool models/worktrees.schema.json"], "evidence": "The schema parses as JSON."},
+      {"criterion": "AC-03", "commands": ["python3 operations/conformance_test.py"], "evidence": "The pure planner returns canonical records."},
+      {"criterion": "AC-04", "commands": ["python3 operations/conformance_test.py"], "evidence": "Known noncanonical layouts are rejected."},
+      {"criterion": "AC-05", "commands": ["./project/governance-check.sh --actor agent", "git diff --check"], "evidence": "Repository gates pass before publication."}
+    ]
+  }
 }

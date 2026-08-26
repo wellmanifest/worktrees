@@ -1,0 +1,5 @@
+2026-08-26 SESSION_EXECUTION_AUTHORIZATION: user requested investigation,
+standardization, integration into wellmanifest/new-project and publication.
+2026-08-26 DECISION: HOME wellmanifest; SHAPE domain_pack; runtime effects stay
+with Subactor or another adopter.
+2026-08-26 SAFETY: no existing worktree is moved or deleted by this ticket.
