@@ -16,9 +16,9 @@
     "targetBranch": "main",
     "outcome": "Separate worktree placement from Git lifecycle and define lease-aware execution boundaries.",
     "nonGoals": ["Delete existing worktrees", "Own branch disposition", "Execute merges"],
-    "complexity": "M",
+    "complexity": "S",
     "estimatedMinutes": 20,
-    "budgets": {"maxImplementationFiles": 10, "maxAffectedComponents": 3, "maxPublicInterfaceChanges": 2, "maxRuntimeDependencies": 0},
+    "budgets": {"maxImplementationFiles": 5, "maxAffectedComponents": 2, "maxPublicInterfaceChanges": 1, "maxRuntimeDependencies": 0},
     "architecture": {
       "status": "accepted",
       "decision": "Keep one canonical placement pack and route lifecycle and merge decisions to their owning standards.",
