@@ -65,11 +65,51 @@ The same segments apply on Windows with the native separator.
    process and dirty-worktree state. This standard does not itself authorize
    cleanup.
 
+## Workspace classes
+
+Only a `delivery` workspace is a writable ticket worktree governed by the
+canonical layout above. Other checkout classes must remain visibly distinct:
+
+| Class | Writable | Canonical location | Meaning |
+| --- | --- | --- | --- |
+| `delivery` | yes, one lease holder | `<workspace>/.worktrees/<repo>--<ticket>--<slug>` | implementation for one publishable ticket |
+| `validation-snapshot` | no | runtime-owned ephemeral storage | exact-head, read-only validation input |
+| `deployment-snapshot` | no | runtime-owned deployment storage | immutable release/deployment input |
+| `runtime-data` | not a Git worktree | runtime-owned state directory | queues, logs, caches and service state |
+
+A runtime MUST NOT classify a deployment checkout, validator snapshot, cache or
+service directory as a delivery worktree merely to exempt it from cleanup. A
+delivery worktree MUST NOT contain another clone or another `.worktrees` root.
+
+## Lease and single-writer requirements
+
+1. The runtime MUST acquire the exact lease before the first writable effect.
+2. The lease identity MUST bind repository identity, ticket, branch and
+   canonical path; a branch-name pattern or directory glob is not a lease.
+3. At most one non-expired lease may authorize writes for a delivery unit.
+4. Heartbeat, fencing token and compare-and-swap semantics are supplied by the
+   adopted authority/change-lease contract; this pack only supplies the lease
+   path.
+5. A publication freeze makes the worktree read-only until the exact-head
+   decision is terminal.
+6. A released or expired lease does not itself prove that deletion is safe.
+
+## Terminal audit and cleanup handoff
+
+Cleanup is a separately authorized runtime effect. Before requesting it, the
+runtime MUST record observations for dirty state, running processes, open pull
+requests, remote reachability, integration into the default branch and unique
+commits. Unknown or unique data is preserved. The runtime removes an exact
+linked worktree through Git, prunes metadata, and only then may remove a
+released disposable branch under `wellmanifest/git-lifecycle`.
+
 ## Responsibility boundaries
 
 - `wellmanifest/worktrees` owns physical placement, deterministic names and the
   lease path contract.
 - `wellmanifest/git-lifecycle` owns branch, ref and history transitions.
+- `wellmanifest/merge` owns the evidence-based disposition of divergent work;
+  it does not perform the effect.
 - `wellmanifest/ticket-lifecycle` owns ticket intent and workflow state.
 - An adopting runtime such as Subactor owns Git and filesystem effects,
   locking, observation and receipts.

@@ -12,6 +12,8 @@
     "project/ticket-001/**",
     "TODO.md",
     "project/TICKETS.md",
+    "README.md",
+    "CHANGELOG.md",
     "VERSION",
     "docs/STANDARD.md",
     "docs/ARCHITECTURE.md",
@@ -37,7 +39,7 @@
   "delivery": {
     "acceptedBaseSha": "9adf68fa24dd4c49ef87f51cceeb2ac25c0a2442",
     "targetBranch": "main",
-    "outcome": "Define one versioned and machine-checkable workspace-level placement contract for ticket worktrees.",
+    "outcome": "Define one versioned and machine-checkable workspace-level placement contract for ticket worktrees, with explicit workspace classes and single-writer handoff boundaries.",
     "nonGoals": [
       "Execute Git or filesystem effects",
       "Own ticket or branch lifecycle semantics",
@@ -61,7 +63,7 @@
       ],
       "responsibilityChanges": true,
       "interfaceChanges": ["wellmanifest.worktrees/v1 layout record"],
-      "dataChanges": ["Canonical worktree, branch and lease path derivation"],
+      "dataChanges": ["Canonical worktree, branch and lease path derivation", "Workspace class and cleanup handoff guidance"],
       "ui": {"impact": "none", "states": [], "evidence": []},
       "rollback": "Revert this ticket before adoption; it performs no runtime migration or effect."
     },

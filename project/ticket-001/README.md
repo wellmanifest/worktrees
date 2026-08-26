@@ -22,6 +22,10 @@ or another adopting runtime.
 - [ ] AC-03: A dependency-free planner produces canonical paths and branch names.
 - [ ] AC-04: Validation rejects repo-local, parallel-root and ticket-drift layouts.
 - [ ] AC-05: Unit tests and repository governance checks pass.
+- [ ] AC-06: Delivery, validation, deployment and runtime storage cannot be
+  confused by an adopting runtime.
+- [ ] AC-07: The standard delegates Git, merge and ticket semantics to their
+  canonical packs instead of restating them.
 
 ## Session authorization and risk
 
@@ -41,6 +45,8 @@ of existing worktrees, secret access, or rewriting existing branches.
 - Outcome: one versioned, machine-checkable workspace-level location for
   ticket worktrees
 - Non-goals: Git effects, lifecycle ownership, migration and cleanup
+- Compatibility: `wellmanifest/git` is an alias of
+  `wellmanifest/git-lifecycle`, not a separate standard
 - Complexity: M; five implementation files, three components, one interface,
   zero runtime dependencies
 
