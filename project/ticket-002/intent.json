@@ -1,0 +1,57 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-002",
+  "summary": "Bootstrap repository CI required checks",
+  "workstream": "infrastructure",
+  "classification": {
+    "kind": "SERVICE",
+    "priority": "P1",
+    "origin": "health"
+  },
+  "allowedPaths": [
+    "project/ticket-002/**",
+    "TODO.md",
+    "project/TICKETS.md",
+    ".github/workflows/ci.yml"
+  ],
+  "forbiddenPaths": ["project/ticket-*/user-*.md"],
+  "stacks": [],
+  "dependsOn": [],
+  "conflictsWith": [],
+  "integrationTicket": null,
+  "delivery": {
+    "acceptedBaseSha": "fda4630d67d17d376c2dffe1fe955adccea49cd5",
+    "targetBranch": "main",
+    "outcome": "Publish the repository CI jobs already declared by the adopted required-checks contract.",
+    "nonGoals": [
+      "Change the adopted required-checks declaration",
+      "Implement the worktree placement standard",
+      "Change GitHub rulesets"
+    ],
+    "complexity": "XS",
+    "estimatedMinutes": 10,
+    "budgets": {
+      "maxImplementationFiles": 1,
+      "maxAffectedComponents": 1,
+      "maxPublicInterfaceChanges": 0,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Add one portable CI workflow whose job display names exactly match the adopted required-checks declaration.",
+      "components": [
+        {"name": "repository-ci", "paths": [".github/workflows/ci.yml"]}
+      ],
+      "responsibilityChanges": false,
+      "interfaceChanges": [],
+      "dataChanges": [],
+      "ui": {"impact": "none", "states": [], "evidence": []},
+      "rollback": "Revert the workflow commit; the adopted governance package remains unchanged."
+    },
+    "runtimeDependencies": [],
+    "validation": [
+      {"criterion": "AC-01", "commands": ["./project/governance-check.sh --actor agent"], "evidence": "Required-check names and workflow jobs match."},
+      {"criterion": "AC-02", "commands": ["python3 .governance/check_required_checks.py --root ."], "evidence": "Both declared job names are published."}
+    ]
+  }
+}
