@@ -4,7 +4,7 @@
   "summary": "Codify worktree execution boundaries",
   "workstream": "integration",
   "classification": {"kind": "FEATURE", "priority": "P1", "origin": "requested"},
-  "allowedPaths": ["project/ticket-003/**", "project/ticket-001/README.md", "TODO.md", "project/TICKETS.md", "README.md", "CHANGELOG.md", "docs/STANDARD.md", "docs/ARCHITECTURE.md"],
+  "allowedPaths": ["project/ticket-003/**", "project/ticket-001/README.md", "TODO.md", "project/TICKETS.md", "docs/STANDARD.md", "docs/ARCHITECTURE.md"],
   "forbiddenPaths": ["project/ticket-*/user-*.md"],
   "stacks": [],
   "dependsOn": [],
