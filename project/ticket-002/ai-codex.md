@@ -21,6 +21,7 @@ workflow. The hash-pinned governance package must remain unchanged.
 
 - Initialized the bounded ticket and recorded SESSION_EXECUTION_AUTHORIZATION
   from the request to execute this work.
+- Added portable Linux and Windows validation jobs with pinned actions.
 
 ## Blockers
 
