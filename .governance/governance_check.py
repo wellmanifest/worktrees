@@ -18,6 +18,28 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
+# Managed validators are read-only checks. Importing adjacent managed modules
+# must not create `__pycache__` inside the repository and turn a clean checkout
+# into an implementation diff on the next validation pass.
+_previous_bytecode_policy = sys.dont_write_bytecode
+sys.dont_write_bytecode = True
+try:
+    try:
+        from ticket_activity import ActivityError, resolve as resolve_ticket_activity
+    except ModuleNotFoundError:
+        _activity_spec = importlib.util.spec_from_file_location(
+            "ticket_activity", Path(__file__).with_name("ticket_activity.py")
+        )
+        if _activity_spec is None or _activity_spec.loader is None:
+            raise
+        _activity_module = importlib.util.module_from_spec(_activity_spec)
+        sys.modules[_activity_spec.name] = _activity_module
+        _activity_spec.loader.exec_module(_activity_module)
+        ActivityError = _activity_module.ActivityError
+        resolve_ticket_activity = _activity_module.resolve
+finally:
+    sys.dont_write_bytecode = _previous_bytecode_policy
+
 RUNTIME_VERSION = "0.11.0"
 POLICY_DSL_LOCK = {
     "schema": "new-project.policy-dsl-lock/v1",
@@ -37,6 +59,7 @@ POLICY_DSL_LOCK = {
     },
 }
 ACTIVE_DEFAULT = {"IN_PROGRESS"}
+TICKET_ACTIVITY_ERROR = "GOV-TICKET-ACTIVITY-001"
 EXECUTABLE_SUFFIXES = {
     ".bat", ".c", ".cc", ".cmd", ".cpp", ".go", ".java", ".js", ".jsx",
     ".mjs", ".php", ".ps1", ".py", ".rb", ".rs", ".sh", ".ts", ".tsx",
@@ -435,7 +458,7 @@ def relative_pattern_list(value: Any, *, nonempty: bool = False) -> bool:
 def delivery_limits_valid(value: dict[str, Any]) -> bool:
     return all([
         isinstance(value.get("requiredForImplementation"), bool),
-        1 <= value["maxActiveMinutes"] <= 30,
+        1 <= value["maxActiveMinutes"] <= 240,
         1 <= value["checkpointMinutes"] < value["maxActiveMinutes"],
         value["maxImplementationFiles"] >= 1,
         value["maxAffectedComponents"] >= 1,
@@ -526,8 +549,8 @@ def delivery_header_error(value: dict[str, Any]) -> str | None:
     if value.get("complexity") not in {"XS", "S", "M", "L"}:
         return "delivery complexity must be XS, S, M or L"
     minutes = value.get("estimatedMinutes")
-    if not isinstance(minutes, int) or isinstance(minutes, bool) or not 1 <= minutes <= 30:
-        return "delivery estimatedMinutes must be between 1 and 30"
+    if not isinstance(minutes, int) or isinstance(minutes, bool) or not 1 <= minutes <= 240:
+        return "delivery estimatedMinutes must be between 1 and 240"
     return None
 
 
@@ -946,19 +969,18 @@ def check_history_order(
             break
     if first_implementation is None:
         return
-    index, commit = first_implementation
-    parent = f"{commit}^" if index > 0 else base
+    _, commit = first_implementation
     ticket_intent = f"{ticket_root.rstrip('/')}/{ticket_name}/{intent_path}"
     try:
         subprocess.run(
-            ["git", "cat-file", "-e", f"{parent}:{ticket_intent}"], cwd=root,
+            ["git", "cat-file", "-e", f"{commit}:{ticket_intent}"], cwd=root,
             check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
     except subprocess.CalledProcessError:
         report.add(
             "GOV-INTENT-003",
-            f"{ticket_intent} did not exist before the first implementation commit.",
-            "Commit the plan-only ticket and intent first; start implementation in a later commit after review.",
+            f"{ticket_intent} was absent from the first material implementation commit.",
+            "Include the validated intent atomically with the first material commit; do not create a separate plan-only commit.",
             [ticket_intent], {"firstImplementationCommit": commit},
         )
 
@@ -1417,6 +1439,40 @@ def load_ticket_records(directories: list[Path], config: dict[str, Any]) -> list
     return records
 
 
+def active_ticket_records(
+    root: Path,
+    config: dict[str, Any],
+    records: list[TicketRecord],
+    report: Report | None = None,
+) -> list[TicketRecord]:
+    """Return live reservations from the shared status/receipt resolver."""
+    active_statuses = set(config.get("activeStatuses", ACTIVE_DEFAULT))
+    active: list[TicketRecord] = []
+    for record in records:
+        if record.status not in active_statuses:
+            continue
+        try:
+            resolution = resolve_ticket_activity(root, record.directory, active_statuses)
+        except ActivityError as error:
+            # A broken optional cache must never fabricate terminal authority.
+            # Keep the projection active and expose one stable, recoverable error.
+            active.append(record)
+            if report is not None and not any(
+                finding.code == TICKET_ACTIVITY_ERROR for finding in report.findings
+            ):
+                report.add(
+                    TICKET_ACTIVITY_ERROR,
+                    f"Ticket activity could not be resolved safely: {error}",
+                    "Reconcile or quarantine the clone-external registry from protected evidence; follow error/GOV-TICKET-ACTIVITY.md.",
+                    [rel(root, record.directory / "README.md")],
+                    {"ticket": record.directory.name, "fallback": "remain-active"},
+                )
+            continue
+        if resolution.active:
+            active.append(record)
+    return active
+
+
 def repository_files(root: Path, changed: list[str]) -> list[str]:
     try:
         raw = git_output(root, ["ls-files", "-co", "--exclude-standard", "-z"])
@@ -1474,7 +1530,7 @@ def check_workstream_limits(
         if len(members) > limit:
             report.add(
                 "GOV-WORKSTREAM-002", f"Workstream '{workstream}' has {len(members)} active tickets; limit is {limit}.",
-                "Keep one active implementation ticket in this workstream or close/block-route the competing scope.",
+                "Keep active tickets within the configured limit, narrow scopes, or close/block-route competing work.",
                 [rel(root, member.directory) for member in members],
                 {"workstream": workstream, "tickets": [member.directory.name for member in members], "limit": limit},
             )
@@ -1543,6 +1599,97 @@ def integration_reference_valid(record: TicketRecord | None, required_workstream
     )
 
 
+def atomic_adoption_binding_paths(
+    root: Path,
+    manifest: dict[str, Any],
+    intent: dict[str, Any],
+) -> set[str]:
+    """Return the closed set of target-owned files required during adoption."""
+    delivery = intent.get("delivery")
+    if not isinstance(delivery, dict) or "standardAdoption" not in delivery:
+        return set()
+    adoption = delivery["standardAdoption"]
+    if not isinstance(adoption, dict):
+        return set()
+    bindings: set[str] = set()
+    revision = adoption.get("toRevision")
+    registry_path = next(
+        (
+            root / candidate
+            for candidate in (
+                ".governance/adoption-bindings.json",
+                "governance/adoption-bindings.json",
+            )
+            if (root / candidate).is_file()
+        ),
+        None,
+    )
+    if registry_path is not None and isinstance(revision, str):
+        try:
+            registry = load_json(registry_path)
+            workflow_paths = registry.get("revisionBoundWorkflowPaths")
+            registry_valid = (
+                set(registry) == {"schema", "revisionBoundWorkflowPaths"}
+                and registry.get("schema") == "new-project.adoption-bindings/v1"
+                and isinstance(workflow_paths, list)
+                and bool(workflow_paths)
+                and len(workflow_paths) == len(set(workflow_paths))
+                and all(
+                    isinstance(path, str)
+                    and re.fullmatch(r"[A-Za-z0-9._/-]+\.ya?ml", path) is not None
+                    and relative_pattern(path)
+                    for path in workflow_paths
+                )
+                and re.fullmatch(r"[a-f0-9]{40}", revision) is not None
+            )
+            if registry_valid:
+                uses_pattern = re.compile(
+                    r"(?m)^\s*uses:\s*wellmanifest/new-project/\.github/workflows/"
+                    r"governance\.yml@([a-f0-9]{40})\s*(?:#.*)?$"
+                )
+                ref_pattern = re.compile(
+                    r"(?m)^\s*standard-ref:\s*([a-f0-9]{40})\s*(?:#.*)?$"
+                )
+                for raw_path in workflow_paths:
+                    workflow_path = safe_repo_path(root, raw_path)
+                    if not workflow_path.is_file():
+                        continue
+                    content = workflow_path.read_text(encoding="utf-8")
+                    if uses_pattern.findall(content) == [revision] and ref_pattern.findall(content) == [revision]:
+                        bindings.add(raw_path)
+        except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError):
+            pass  # Lock and ownership validation remain fail closed.
+    contract_path = next(
+        (
+            root / candidate
+            for candidate in (".governance/agent-hosts.json", "governance/agent-hosts.json")
+            if (root / candidate).is_file()
+        ),
+        None,
+    )
+    if contract_path is not None:
+        try:
+            contract = load_json(contract_path)
+            packaging = contract.get("packaging", {})
+            if isinstance(packaging, dict):
+                for binding in packaging.values():
+                    marker = binding.get("marker") if isinstance(binding, dict) else None
+                    if isinstance(marker, str) and relative_pattern(marker) and (root / marker).is_file():
+                        bindings.add(marker)
+        except (OSError, json.JSONDecodeError, TypeError, ValueError):
+            pass  # The authoritative agent-host validator reports malformed contracts.
+    docker = manifest.get("docker", {})
+    if isinstance(docker, dict) and docker.get("required") is True:
+        for field in ("dockerfiles", "composeFiles"):
+            candidates = docker.get(field, [])
+            if isinstance(candidates, list):
+                bindings.update(
+                    path for path in candidates
+                    if isinstance(path, str) and relative_pattern(path) and (root / path).is_file()
+                )
+    return bindings
+
+
 def check_active_relationships(
     root: Path,
     config: dict[str, Any],
@@ -1553,6 +1700,7 @@ def check_active_relationships(
     report: Report,
 ) -> None:
     closed_statuses = set(config.get("closedStatuses", []))
+    active_statuses = set(config.get("activeStatuses", ACTIVE_DEFAULT))
     by_name = {record.directory.name: record for record in records}
     active_names = {record.directory.name for record in active}
     conflict_pairs: set[tuple[str, str]] = set()
@@ -1561,7 +1709,14 @@ def check_active_relationships(
         assert record.intent is not None
         for dependency in record.intent["dependsOn"]:
             prerequisite = by_name.get(dependency)
-            if prerequisite is None or prerequisite.status not in closed_statuses:
+            verified_terminal = bool(
+                prerequisite
+                and prerequisite.status in active_statuses
+                and dependency not in active_names
+            )
+            if prerequisite is None or (
+                prerequisite.status not in closed_statuses and not verified_terminal
+            ):
                 report.add(
                     "GOV-DEPENDENCY-002", f"Active ticket {record.directory.name} has unfinished or missing dependency {dependency}.",
                     "Complete the prerequisite or return the dependent ticket to a non-active planning backlog.",
@@ -1593,29 +1748,37 @@ def check_active_relationships(
 
 def check_workstream_claims(
     root: Path,
+    manifest: dict[str, Any],
     config: dict[str, Any],
     workstreams: dict[str, Any],
     governance_patterns: list[str],
     files: list[str],
     valid_active: list[TicketRecord],
+    verified_adoption_paths: set[str],
     report: Report,
 ) -> None:
     for record in valid_active:
         assert record.intent is not None
         owned_paths = workstreams[record.intent["workstream"]]["ownedPaths"]
+        adoption_bindings = (
+            atomic_adoption_binding_paths(root, manifest, record.intent)
+            | verified_adoption_paths
+        )
         implementation_patterns = [
             pattern for pattern in record.intent["allowedPaths"]
             if not matches(pattern, governance_patterns)
         ]
         unowned_patterns = [
             pattern for pattern in implementation_patterns
-            if not any(pattern_covered_by(pattern, owned) for owned in owned_paths)
+            if pattern not in adoption_bindings
+            and not any(pattern_covered_by(pattern, owned) for owned in owned_paths)
         ]
         unowned_claims = [
             path for path in files
             if not matches(path, governance_patterns)
             and matches(path, record.intent["allowedPaths"])
             and not matches(path, record.intent["forbiddenPaths"])
+            and path not in adoption_bindings
             and not matches(path, owned_paths)
         ]
         if unowned_patterns or unowned_claims:
@@ -1715,6 +1878,7 @@ def check_coordination(
     manifest: dict[str, Any],
     records: list[TicketRecord],
     changed: list[str],
+    verified_adoption_paths: set[str],
     report: Report,
 ) -> None:
     coordination = manifest.get("coordination")
@@ -1722,7 +1886,30 @@ def check_coordination(
         return
     config = manifest["ticket"]
     check_ticket_statuses(root, config, records, report)
-    active = [record for record in records if record.status in set(config.get("activeStatuses", ACTIVE_DEFAULT))]
+    active = active_ticket_records(root, config, records, report)
+    if not changed:
+        # Ticket records merged into the clean default-branch snapshot are
+        # authorization history, not evidence of concurrent live writers. A
+        # current non-empty change selects its lease below; implementation
+        # authorization remains independently fail-closed in check_change_gate.
+        active = []
+    else:
+        changed_active = [
+            record for record in active
+            if any(path.startswith(f"{rel(root, record.directory).rstrip('/')}/") for path in changed)
+        ]
+        if changed_active:
+            active = changed_active
+        elif len(active) > 1:
+            path_active = [
+                record for record in active
+                if record.intent is not None and any(
+                    matches(path, record.intent["allowedPaths"])
+                    and not matches(path, record.intent["forbiddenPaths"])
+                    for path in changed
+                )
+            ]
+            active = path_active if len(path_active) == 1 else active
     workstreams = coordination["workstreams"]
     valid_active = valid_active_tickets(root, config, active, workstreams, report)
     check_workstream_limits(root, valid_active, coordination["maxActiveTicketsPerWorkstream"], report)
@@ -1730,7 +1917,10 @@ def check_coordination(
     check_active_relationships(root, config, coordination, records, active, valid_active, report)
     files = repository_files(root, changed)
     governance_patterns = manifest["governancePaths"]
-    check_workstream_claims(root, config, workstreams, governance_patterns, files, valid_active, report)
+    check_workstream_claims(
+        root, manifest, config, workstreams, governance_patterns, files,
+        valid_active, verified_adoption_paths, report,
+    )
     if coordination["rejectActiveScopeOverlap"]:
         check_scope_overlaps(valid_active, files, governance_patterns, report)
 
@@ -2045,12 +2235,17 @@ def immutable_image_reference(reference: str) -> bool:
 
 def dockerfile_image_references(path: Path) -> list[tuple[int, str]]:
     references: list[tuple[int, str]] = []
+    stage_aliases: set[str] = set()
     for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         tokens = line.strip().split()
         if not tokens or tokens[0].upper() != "FROM":
             continue
-        image = next((token for token in tokens[1:] if not token.startswith("--")), "")
-        references.append((line_number, image))
+        operands = [token for token in tokens[1:] if not token.startswith("--")]
+        image = operands[0] if operands else ""
+        if image.lower() not in stage_aliases:
+            references.append((line_number, image))
+        if len(operands) >= 3 and operands[1].upper() == "AS":
+            stage_aliases.add(operands[2].lower())
     return references
 
 
@@ -2116,10 +2311,16 @@ def check_stacks(root: Path, manifest: dict[str, Any], profiles_path: Path | Non
             report.add("GOV-STACK-001", f"Declared stack '{stack}' has no recognized project marker.", "Add the stack marker or remove the inaccurate stack declaration.", markers)
 
 
-def check_ticket_content(root: Path, directories: list[Path], config: dict[str, Any], report: Report) -> None:
+def check_ticket_content(
+    root: Path,
+    directories: list[Path],
+    active: list[TicketRecord],
+    config: dict[str, Any],
+    report: Report,
+) -> None:
+    active_names = {record.directory.name for record in active}
     for directory in directories:
-        status, _ = parse_ticket_state(directory / "README.md")
-        if status in set(config["activeStatuses"]):
+        if directory.name in active_names:
             missing = [rel(root, directory / item) for item in config["requiredFiles"] if not (directory / item).is_file()]
             for pattern in config["requiredAgentFiles"]:
                 if not any(directory.glob(pattern)):
@@ -2354,21 +2555,25 @@ def check_delivery_base(
         )
 
     accepted_sha = delivery["acceptedBaseSha"]
-    observed_base = None
+    component_patterns = [
+        pattern
+        for component in delivery["architecture"]["components"]
+        for pattern in component["paths"]
+    ]
+    observed: list[tuple[str, str]] = []
     if base:
         try:
-            observed_base = git_output(root, ["rev-parse", f"{base}^{{commit}}"]).decode().strip()
+            observed.append((
+                "suppliedBase",
+                git_output(root, ["rev-parse", f"{base}^{{commit}}"])
+                .decode()
+                .strip(),
+            ))
         except (subprocess.CalledProcessError, FileNotFoundError):
             report.add(
                 "GOV-BASE-001", "The supplied base revision cannot be resolved.",
-                "Fetch the complete target history and rerun against the exact accepted base SHA.",
+                "Fetch the complete target history and rerun against the accepted base SHA.",
                 [intent_path], {"suppliedBase": base, "acceptedBaseSha": accepted_sha},
-            )
-        if observed_base and observed_base != accepted_sha:
-            report.add(
-                "GOV-BASE-001", f"Ticket {record.directory.name} approval is bound to a stale or different base SHA.",
-                "Refresh the branch, update architecture/scope evidence and obtain fresh approval before continuing.",
-                [intent_path], {"acceptedBaseSha": accepted_sha, "observedBaseSha": observed_base},
             )
 
     target_refs = [
@@ -2380,13 +2585,81 @@ def check_delivery_base(
             current_target = git_output(root, ["rev-parse", "--verify", f"{target_ref}^{{commit}}"]).decode().strip()
         except (subprocess.CalledProcessError, FileNotFoundError):
             continue
-        if current_target != accepted_sha:
-            report.add(
-                "GOV-BASE-001", f"Target branch '{delivery['targetBranch']}' moved after ticket approval.",
-                "Refresh from the target, re-run conflict and validation checks, then obtain fresh approval if intent or architecture changed.",
-                [intent_path], {"acceptedBaseSha": accepted_sha, "currentTargetSha": current_target, "targetRef": target_ref},
-            )
+        observed.append((target_ref, current_target))
         break
+
+    if not observed:
+        return
+    try:
+        accepted_commit = git_output(
+            root, ["rev-parse", "--verify", f"{accepted_sha}^{{commit}}"]
+        ).decode().strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        report.add(
+            "GOV-BASE-001", "The accepted base revision cannot be resolved.",
+            "Fetch the complete target history and rerun against the accepted base SHA.",
+            [intent_path], {"acceptedBaseSha": accepted_sha},
+        )
+        return
+
+    checked: set[str] = set()
+    for source, observed_sha in observed:
+        if observed_sha in checked or observed_sha == accepted_commit:
+            continue
+        checked.add(observed_sha)
+        ancestor = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", accepted_commit, observed_sha],
+            cwd=root,
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        if ancestor.returncode != 0:
+            report.add(
+                "GOV-BASE-001",
+                f"Ticket {record.directory.name} accepted base is not an ancestor of the observed target.",
+                "Rebuild from the current target and obtain fresh scope and architecture approval.",
+                [intent_path],
+                {
+                    "acceptedBaseSha": accepted_commit,
+                    "observedBaseSha": observed_sha,
+                    "source": source,
+                },
+            )
+            continue
+        try:
+            raw_paths = git_output(
+                root,
+                ["diff", "--name-only", "-z", f"{accepted_commit}..{observed_sha}"],
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            report.add(
+                "GOV-BASE-001", "Intervening target changes cannot be inspected.",
+                "Fetch the complete target history and rerun the overlap check.",
+                [intent_path],
+                {"acceptedBaseSha": accepted_commit, "observedBaseSha": observed_sha},
+            )
+            continue
+        intervening = sorted(
+            path
+            for path in raw_paths.decode("utf-8", "surrogateescape").split("\0")
+            if path
+        )
+        overlap = [path for path in intervening if matches(path, component_patterns)]
+        if overlap:
+            report.add(
+                "GOV-BASE-002",
+                f"Target branch changes overlap components approved for {record.directory.name}.",
+                "Refresh the branch, re-run validation and obtain fresh approval for the overlapping scope.",
+                [intent_path, *overlap],
+                {
+                    "acceptedBaseSha": accepted_commit,
+                    "observedBaseSha": observed_sha,
+                    "source": source,
+                    "componentPatterns": component_patterns,
+                    "overlappingPaths": overlap,
+                },
+            )
 
 
 def map_implementation_components(
@@ -2499,7 +2772,7 @@ def check_integration_ownership(
         report.add(
             "GOV-ARCHITECTURE-001",
             "Responsibility or persistent-data movement is not owned by an integration slice.",
-            "Create and approve a <=30-minute integration-workstream slice before changing component ownership or persistent data.",
+            "Use an explicit integration-workstream contract before changing component ownership or persistent data.",
             [intent_path],
             {"workstream": record.intent["workstream"], "requiredWorkstream": integration_workstream},
         )
@@ -2515,18 +2788,46 @@ def check_delivery_gate(
     report: Report,
 ) -> None:
     policy = manifest.get("delivery")
-    if not isinstance(policy, dict) or not policy.get("requiredForImplementation"):
+    if not isinstance(policy, dict):
         return
     assert record.intent is not None
     delivery = record.intent.get("delivery")
     intent_path = rel(root, record.directory / manifest["ticket"]["intentFile"])
     if not isinstance(delivery, dict):
-        report.add(
-            "GOV-DELIVERY-001",
-            f"Implementation ticket {record.directory.name} has no bounded delivery contract.",
-            "Return to WAIT_FOR_APPROVAL, declare one <=30-minute XS/S outcome with architecture and validation evidence, then obtain fresh approval.",
-            [intent_path],
-        )
+        explicit_paths = [
+            path for path in implementation
+            if path in policy["dependencyManifestPaths"]
+            or matches(path, manifest["coordination"]["integration"]["requiredForPaths"])
+        ]
+        if policy.get("requiredForImplementation") or explicit_paths:
+            report.add(
+                "GOV-DELIVERY-001",
+                f"Implementation ticket {record.directory.name} needs an explicit delivery contract.",
+                "Add delivery architecture and validation evidence for the high-risk paths; routine disjoint source/test changes use the compact intent.",
+                [intent_path, *explicit_paths],
+                {"explicitContractPaths": explicit_paths},
+            )
+            return
+        public_paths = [
+            path for path in implementation
+            if matches(path, policy["publicInterfacePaths"])
+        ]
+        if (
+            len(implementation) > policy["maxImplementationFiles"]
+            or len(public_paths) > policy["maxPublicInterfaceChanges"]
+        ):
+            report.add(
+                "GOV-BUDGET-001",
+                f"Routine diff for {record.directory.name} exceeds the policy hard limit.",
+                "Narrow the change or add an explicit delivery contract; do not create tracking-only split tickets.",
+                implementation,
+                {
+                    "implementationFiles": len(implementation),
+                    "implementationFileLimit": policy["maxImplementationFiles"],
+                    "publicInterfacePaths": public_paths,
+                    "publicInterfaceLimit": policy["maxPublicInterfaceChanges"],
+                },
+            )
         return
     check_declared_delivery_budget(policy, delivery, record, intent_path, report)
     check_delivery_timebox(policy, record, intent_path, elapsed_minutes, report)
@@ -2616,11 +2917,13 @@ def check_selected_ticket_state(
     if workflow not in set(config["implementationStates"]):
         report.add(
             "GOV-INTENT-001", f"Ticket {directory.name} is in workflow state {workflow or 'UNKNOWN'}, not an implementation state.",
-            "Keep the change plan-only until explicit approval moves the ticket to EDIT.", implementation,
+            "Do not commit the pending change; obtain approval that moves the ticket to EDIT, then deliver it with material output.", implementation,
         )
 
 
 def check_workstream_change_scope(
+    root: Path,
+    manifest: dict[str, Any],
     records: list[TicketRecord],
     coordination: dict[str, Any],
     selected: TicketRecord,
@@ -2629,9 +2932,13 @@ def check_workstream_change_scope(
 ) -> None:
     intent = selected.intent
     assert intent is not None
+    adoption_bindings = atomic_adoption_binding_paths(root, manifest, intent)
     workstream = coordination["workstreams"].get(intent["workstream"])
     if isinstance(workstream, dict):
-        unowned = [path for path in implementation if not matches(path, workstream["ownedPaths"])]
+        unowned = [
+            path for path in implementation
+            if path not in adoption_bindings and not matches(path, workstream["ownedPaths"])
+        ]
         if unowned:
             report.add(
                 "GOV-WORKSTREAM-003", f"Changed paths are not owned by workstream '{intent['workstream']}'.",
@@ -2639,7 +2946,10 @@ def check_workstream_change_scope(
                 unowned, {"ticket": selected.directory.name, "workstream": intent["workstream"], "ownedPaths": workstream["ownedPaths"]},
             )
     integration = coordination["integration"]
-    shared = [path for path in implementation if matches(path, integration["requiredForPaths"])]
+    shared = [
+        path for path in implementation
+        if path not in adoption_bindings and matches(path, integration["requiredForPaths"])
+    ]
     if shared and intent["workstream"] != integration["workstream"]:
         integration_name = intent["integrationTicket"]
         integration_record = next((record for record in records if record.directory.name == integration_name), None)
@@ -2682,7 +2992,7 @@ def check_selected_ticket_intent(
             )
         coordination = manifest.get("coordination")
         if isinstance(coordination, dict) and intent.get("schema") in {"new-project.intent/v2", "new-project.intent/v3"}:
-            check_workstream_change_scope(records, coordination, selected, implementation, report)
+            check_workstream_change_scope(root, manifest, records, coordination, selected, implementation, report)
         if intent is not None:
             check_delivery_gate(root, manifest, selected, implementation, base, elapsed_minutes, report)
 
@@ -2971,6 +3281,7 @@ def package_entry(item: Any) -> tuple[str, str, str]:
     allowed_extendable = {
         ("governance/manifest.default.json", ".governance/manifest.json"),
         ("governance/required-checks.json", ".governance/required-checks.json"),
+        ("governance/ticket-allocation.json", ".governance/ticket-allocation.json"),
     }
     if item.get("strategy") == "extendable" and (
         (source, target) not in allowed_extendable or item.get("executable")
@@ -3135,7 +3446,12 @@ def verify_changed_managed_paths(
                     )
                 consumed_restorations.add(raw_path)
             elif content_digest(base_content) != base_hashes[raw_path]:
-                raise ValueError(f"base managed hash differs: {raw_path}")
+                observed_digest = content_digest(base_content)
+                if takeovers.get(raw_path) != observed_digest:
+                    raise ValueError(
+                        f"base managed hash differs without matching takeover digest: {raw_path}"
+                    )
+                consumed_takeovers.add(raw_path)
         elif base_content is not None:
             if initial:
                 # Installing the standard does not erase target ownership.
@@ -3222,17 +3538,35 @@ def check_change_gate(
     expected_head: str | None,
     enforce_approval: bool,
     elapsed_minutes: int | None,
+    adoption_paths: set[str],
     report: Report,
 ) -> str | None:
     governance_patterns = manifest["governancePaths"]
     config = manifest["ticket"]
-    active = [record for record in records if record.status in set(config.get("activeStatuses", ACTIVE_DEFAULT))]
-    adoption_paths = atomic_standard_adoption_paths(root, base, changed, active, report)
+    active = active_ticket_records(root, config, records, report)
+    changed_active = [
+        record for record in active
+        if any(path.startswith(f"{rel(root, record.directory).rstrip('/')}/") for path in changed)
+    ]
+    if changed_active:
+        active = changed_active
     implementation = [
         path for path in changed
         if not matches(path, governance_patterns) and path not in adoption_paths
     ]
+    if not changed_active and len(active) > 1 and implementation:
+        path_active = [record for record in active if ticket_owns_implementation(record, implementation)]
+        if len(path_active) == 1:
+            active = path_active
     if not implementation:
+        if changed and not adoption_paths:
+            report.add(
+                "GOV-MATERIAL-001",
+                "Changed paths contain only ticket tracking carriers.",
+                "Add a material source, test, configuration, standard or requested documentation change; if no material delta exists, emit an external no-change receipt without a commit or pull request.",
+                changed,
+                {"trackingCarriers": governance_patterns},
+            )
         return None
     repository = manifest.get("repository")
     if repository and repository["mode"] == "monorepo":
@@ -3384,13 +3718,13 @@ def resolve_changed_paths(
 
 def resolve_validation_base(
     supplied_base: str | None,
+    root: Path,
     records: list[TicketRecord],
     config: dict[str, Any],
 ) -> str | None:
     if supplied_base is not None:
         return supplied_base
-    active_statuses = set(config.get("activeStatuses", ACTIVE_DEFAULT))
-    active = [record for record in records if record.status in active_statuses]
+    active = active_ticket_records(root, config, records)
     adoption_records = standard_adoption_records(active)
     if len(adoption_records) != 1:
         return None
@@ -3442,8 +3776,16 @@ def run_governance_checks(
     profiles_path = optional_repo_path(root, args.stack_profiles, "GOV-MANIFEST-001", "stack-profile", report)
     directories = ticket_directories(root, manifest["ticket"])
     records = load_ticket_records(directories, manifest["ticket"])
-    base = resolve_validation_base(args.base, records, manifest["ticket"])
+    base = resolve_validation_base(args.base, root, records, manifest["ticket"])
     changed = resolve_changed_paths(args, root, base, report)
+    active = active_ticket_records(root, manifest["ticket"], records, report)
+    changed_active = [
+        record for record in active
+        if any(path.startswith(f"{rel(root, record.directory).rstrip('/')}/") for path in changed)
+    ]
+    adoption_paths = atomic_standard_adoption_paths(
+        root, base, changed, changed_active or active, report,
+    )
     load_work_classification(root, report, args.work_classification)
     check_lock(root, lock_path, manifest, report)
     check_policy_dsl(root, report)
@@ -3453,15 +3795,15 @@ def run_governance_checks(
     check_domain_contracts(root, manifest, report)
     check_docker_image_references(root, manifest, report)
     check_stacks(root, manifest, profiles_path, report)
-    check_ticket_content(root, directories, manifest["ticket"], report)
-    check_coordination(root, manifest, records, changed, report)
+    check_ticket_content(root, directories, active, manifest["ticket"], report)
+    check_coordination(root, manifest, records, changed, adoption_paths, report)
     check_change_lease(root, report)
     check_changed_content(root, changed, args.actor, args.trusted_human_change, report)
     return check_change_gate(
         root, manifest, records, changed, base, args.head, args.approval_source,
         args.approved_ticket, args.approval_evidence, args.expected_repository,
         args.expected_pull_request, args.expected_head, args.enforce_approval,
-        args.elapsed_minutes, report,
+        args.elapsed_minutes, adoption_paths, report,
     )
 
 

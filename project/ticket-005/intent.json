@@ -1,0 +1,74 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-005",
+  "summary": "Upgrade governance to material-delivery standard",
+  "workstream": "governance",
+  "classification": {
+    "kind": "SERVICE",
+    "priority": "P1",
+    "origin": "health"
+  },
+  "allowedPaths": [
+    "project/ticket-005/**",
+    "project/TICKETS.md",
+    ".governance/manifest.json",
+    ".governance/manifest.lock.json",
+    ".governance/required-checks.json",
+    ".governance/ticket-allocation.json"
+  ],
+  "forbiddenPaths": ["project/ticket-*/user-*.md"],
+  "stacks": [],
+  "dependsOn": [],
+  "conflictsWith": [],
+  "integrationTicket": null,
+  "delivery": {
+    "acceptedBaseSha": "7de5b72d9a0de2f5924b6b2d43ccd6bdc5340d8b",
+    "targetBranch": "main",
+    "outcome": "Atomically adopt new-project 0.19.18 so material-delivery and external terminal-receipt rules govern this repository.",
+    "nonGoals": [
+      "Change the wellmanifest/worktrees domain contract",
+      "Move or delete any worktree",
+      "Modify target runtime behavior"
+    ],
+    "complexity": "S",
+    "estimatedMinutes": 20,
+    "budgets": {
+      "maxImplementationFiles": 4,
+      "maxAffectedComponents": 1,
+      "maxPublicInterfaceChanges": 1,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Use Goal to replace only immutable managed bytes and merge the four target-owned governance projections.",
+      "components": [
+        {
+          "name": "governance-adoption",
+          "paths": [
+            ".governance/manifest.json",
+            ".governance/manifest.lock.json",
+            ".governance/required-checks.json",
+            ".governance/ticket-allocation.json"
+          ]
+        }
+      ],
+      "responsibilityChanges": false,
+      "interfaceChanges": ["Adopted new-project governance contract 0.19.18"],
+      "dataChanges": [],
+      "ui": {"impact": "none", "states": [], "evidence": []},
+      "rollback": "Revert the atomic adoption commit before dependent work; no runtime data is changed."
+    },
+    "standardAdoption": {
+      "sourceRepository": "wellmanifest/new-project",
+      "fromRevision": "4e0b7d6d888f1b4771781d25fa977f15725bcce5",
+      "toRevision": "7dd68589340bfd4b18b94f3141f41833280c2985",
+      "managedTargetTakeovers": []
+    },
+    "runtimeDependencies": [],
+    "validation": [
+      {"criterion": "AC-01", "commands": ["goal governance adopt --source-revision 7dd68589340bfd4b18b94f3141f41833280c2985 --target-root . --check"], "evidence": "Goal reports the published revision up to date."},
+      {"criterion": "AC-02", "commands": ["./project/governance-check.sh --actor agent --base origin/main --head HEAD"], "evidence": "Atomic adoption passes governance."},
+      {"criterion": "AC-03", "commands": ["python3 .governance/check_required_checks.py --root .", "python3 operations/conformance_test.py", "git diff --check"], "evidence": "Checks and repository tests pass."}
+    ]
+  }
+}
