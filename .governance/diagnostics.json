@@ -136,6 +136,21 @@
       "remediation": "Move one ticket to BACKLOG, PLAN or BLOCKED until the conflicting work reaches a terminal state.",
       "documentation": null
     },
+    "GOV-CONTINUITY-001": {
+      "message": "A work-continuity checkpoint is malformed, unsafe or cannot preserve a dirty workspace.",
+      "remediation": "Rebuild the bounded checkpoint from observable state; commit authorized work or provide a content-addressed, secret-scanned external snapshot.",
+      "documentation": "error/GOV-WORK-CONTINUITY.md"
+    },
+    "GOV-CONTINUITY-002": {
+      "message": "The work-continuity receipt chain is stale, rebound or non-monotonic.",
+      "remediation": "Recover the complete append-only chain from the protected receipt store and extend only its latest valid checkpoint.",
+      "documentation": "error/GOV-WORK-CONTINUITY.md"
+    },
+    "GOV-CONTINUITY-003": {
+      "message": "A continuity checkpoint diverges from current repository observation.",
+      "remediation": "Preserve both states and route to reconciliation or BLOCKED; do not reset, overwrite, restore or reuse a stale fencing token.",
+      "documentation": "error/GOV-WORK-CONTINUITY.md"
+    },
     "GOV-DECISION-001": {
       "message": "A repository-changing autonomous decision lacks an append-only record or rewrites earlier evidence.",
       "remediation": "Append a new recomputable decision record; never edit an earlier record.",

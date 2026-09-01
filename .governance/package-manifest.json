@@ -98,6 +98,12 @@
       "executable": false
     },
     {
+      "source": "governance/work-continuity.schema.json",
+      "target": ".governance/work-continuity.schema.json",
+      "strategy": "managed",
+      "executable": false
+    },
+    {
       "source": "governance/remediation-intent.schema.json",
       "target": ".governance/remediation-intent.schema.json",
       "strategy": "managed",
@@ -136,6 +142,12 @@
     {
       "source": "error/GOV-TICKET-ACTIVITY.md",
       "target": ".governance/error/GOV-TICKET-ACTIVITY.md",
+      "strategy": "managed",
+      "executable": false
+    },
+    {
+      "source": "error/GOV-WORK-CONTINUITY.md",
+      "target": ".governance/error/GOV-WORK-CONTINUITY.md",
       "strategy": "managed",
       "executable": false
     },
@@ -202,6 +214,12 @@
     {
       "source": "scripts/ticket_activity.py",
       "target": ".governance/ticket_activity.py",
+      "strategy": "managed",
+      "executable": true
+    },
+    {
+      "source": "scripts/work_continuity.py",
+      "target": ".governance/work_continuity.py",
       "strategy": "managed",
       "executable": true
     },

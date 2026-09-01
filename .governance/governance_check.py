@@ -1028,8 +1028,8 @@ def ticket_list_policy_valid(ticket: dict[str, Any]) -> bool:
         for name in ("activeStatuses", "nonActiveStatuses", "closedStatuses")
     ]
     return all([
-        relative_pattern_list(ticket.get("requiredFiles")),
-        relative_pattern_list(ticket.get("requiredAgentFiles")),
+        ticket.get("requiredFiles") == ["README.md", "intent.json"],
+        ticket.get("requiredAgentFiles") == [],
         string_list(ticket.get("activeStatuses"), nonempty=True),
         "nonActiveStatuses" not in ticket or string_list(ticket.get("nonActiveStatuses"), nonempty=True),
         string_list(ticket.get("closedStatuses"), nonempty=True),
@@ -3511,7 +3511,11 @@ def atomic_standard_adoption_paths(
         return set()
     try:
         evidence = load_standard_adoption_evidence(root, base, adoption)
-        return verify_changed_managed_paths(root, base, changed, *evidence)
+        verified_paths = verify_changed_managed_paths(root, base, changed, *evidence)
+        # The lock is verified input to the atomic adoption proof, but is not
+        # itself a package-managed payload. Keep it in the same one-ticket
+        # ownership slice instead of forcing a carrier-only companion ticket.
+        return verified_paths | {".governance/manifest.lock.json"}
     except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError) as error:
         report.add(
             "GOV-SYNC-001",
