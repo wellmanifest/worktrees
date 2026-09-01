@@ -19,10 +19,12 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
-      - name: Validate repository governance
+      - name: Run domain conformance tests
         env:
           PYTHONDONTWRITEBYTECODE: "1"
-        run: ./project/governance-check.sh --actor ci
+        run: |
+          python3 operations/conformance_test.py
+          python3 -m json.tool models/worktrees.schema.json >/dev/null
 
   windows-governance:
     name: windows-governance
