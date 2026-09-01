@@ -26,6 +26,18 @@
       "executable": false
     },
     {
+      "source": "governance/adoption-bindings.json",
+      "target": ".governance/adoption-bindings.json",
+      "strategy": "managed",
+      "executable": false
+    },
+    {
+      "source": "governance/adoption-bindings.schema.json",
+      "target": ".governance/adoption-bindings.schema.json",
+      "strategy": "managed",
+      "executable": false
+    },
+    {
       "source": "governance/change-evaluation.schema.json",
       "target": ".governance/change-evaluation.schema.json",
       "strategy": "managed",
@@ -40,6 +52,48 @@
     {
       "source": "governance/diagnostics.schema.json",
       "target": ".governance/diagnostics.schema.json",
+      "strategy": "managed",
+      "executable": false
+    },
+    {
+      "source": "governance/ticket-allocation.json",
+      "target": ".governance/ticket-allocation.json",
+      "strategy": "extendable",
+      "executable": false
+    },
+    {
+      "source": "governance/ticket-allocation.schema.json",
+      "target": ".governance/ticket-allocation.schema.json",
+      "strategy": "managed",
+      "executable": false
+    },
+    {
+      "source": "governance/ticket-allocation-request.schema.json",
+      "target": ".governance/ticket-allocation-request.schema.json",
+      "strategy": "managed",
+      "executable": false
+    },
+    {
+      "source": "governance/ticket-allocation-receipt.schema.json",
+      "target": ".governance/ticket-allocation-receipt.schema.json",
+      "strategy": "managed",
+      "executable": false
+    },
+    {
+      "source": "governance/ticket-activity.json",
+      "target": ".governance/ticket-activity.json",
+      "strategy": "managed",
+      "executable": false
+    },
+    {
+      "source": "governance/ticket-activity.schema.json",
+      "target": ".governance/ticket-activity.schema.json",
+      "strategy": "managed",
+      "executable": false
+    },
+    {
+      "source": "governance/terminal-receipt-registry.schema.json",
+      "target": ".governance/terminal-receipt-registry.schema.json",
       "strategy": "managed",
       "executable": false
     },
@@ -80,6 +134,12 @@
       "executable": false
     },
     {
+      "source": "error/GOV-TICKET-ACTIVITY.md",
+      "target": ".governance/error/GOV-TICKET-ACTIVITY.md",
+      "strategy": "managed",
+      "executable": false
+    },
+    {
       "source": "error/GOV-WORKSPACE-LIFECYCLE.md",
       "target": ".governance/error/GOV-WORKSPACE-LIFECYCLE.md",
       "strategy": "managed",
@@ -104,6 +164,24 @@
       "executable": false
     },
     {
+      "source": "subprojects/worktrees/worktrees.schema.json",
+      "target": ".governance/worktrees.schema.json",
+      "strategy": "managed",
+      "executable": false
+    },
+    {
+      "source": "subprojects/worktrees/conformance.py",
+      "target": ".governance/worktree_path_check.py",
+      "strategy": "managed",
+      "executable": true
+    },
+    {
+      "source": "governance/worktrees.lock.json",
+      "target": ".governance/worktrees.lock.json",
+      "strategy": "managed",
+      "executable": false
+    },
+    {
       "source": "scripts/change_lease_check.py",
       "target": ".governance/change_lease_check.py",
       "strategy": "managed",
@@ -118,6 +196,18 @@
     {
       "source": "scripts/worktree_overlap_check.py",
       "target": ".governance/worktree_overlap_check.py",
+      "strategy": "managed",
+      "executable": true
+    },
+    {
+      "source": "scripts/ticket_activity.py",
+      "target": ".governance/ticket_activity.py",
+      "strategy": "managed",
+      "executable": true
+    },
+    {
+      "source": "scripts/ticket_allocation.py",
+      "target": ".governance/ticket_allocation.py",
       "strategy": "managed",
       "executable": true
     },
@@ -360,6 +450,30 @@
       "target": "wellmanifest_governance.py",
       "strategy": "managed",
       "executable": false
+    },
+    {
+      "source": "governance/standard-packs.json",
+      "target": ".governance/standard-packs.json",
+      "strategy": "managed",
+      "executable": false
+    },
+    {
+      "source": "governance/standard-adoption.schema.json",
+      "target": ".governance/standard-adoption.schema.json",
+      "strategy": "managed",
+      "executable": false
+    },
+    {
+      "source": "governance/standard-adoption.default.json",
+      "target": ".governance/standard-adoption.json",
+      "strategy": "seed",
+      "executable": false
+    },
+    {
+      "source": "scripts/standard_pack_check.py",
+      "target": ".governance/standard_pack_check.py",
+      "strategy": "managed",
+      "executable": true
     }
   ]
 }
