@@ -1,0 +1,102 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-010",
+  "summary": "Make repository-local relative worktrees canonical",
+  "workstream": "integration",
+  "classification": {
+    "kind": "FEATURE",
+    "priority": "P1",
+    "origin": "requested"
+  },
+  "allowedPaths": [
+    "project/ticket-010/**",
+    "project/TICKETS.md",
+    "VERSION",
+    "docs/STANDARD.md",
+    "docs/ARCHITECTURE.md",
+    "models/worktrees.schema.json",
+    "operations/conformance.py",
+    "operations/conformance_test.py"
+  ],
+  "forbiddenPaths": ["project/ticket-*/user-*.md"],
+  "stacks": [],
+  "dependsOn": [],
+  "conflictsWith": [],
+  "integrationTicket": null,
+  "placement": {
+    "home": "wellmanifest",
+    "shape": "domain_pack",
+    "runtimeOwner": "subactor",
+    "adopt": ["wellmanifest/new-project"]
+  },
+  "delivery": {
+    "acceptedBaseSha": "ceb3c28208cc9c9bf79c3fd60b95b793885535ba",
+    "targetBranch": "main",
+    "outcome": "Publish wellmanifest.worktrees/v4 with repository-local relative linked worktrees, repository-local leases, deterministic planning and read-only legacy inventory.",
+    "nonGoals": [
+      "Do not move or delete any existing worktree or duplicate clone",
+      "Do not run broad git clean over a repository containing nested worktrees",
+      "Do not implement Git or filesystem allocation effects in this domain pack",
+      "Do not relocate this final v3-created ticket worktree"
+    ],
+    "complexity": "L",
+    "estimatedMinutes": 120,
+    "budgets": {
+      "maxImplementationFiles": 10,
+      "maxAffectedComponents": 4,
+      "maxPublicInterfaceChanges": 3,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Make the primary checkout the allocation anchor, require Git relative worktree links, and expose observation-only classification for registered legacy and anomalous paths.",
+      "components": [
+        {"name": "normative-contract", "paths": ["docs/**", "VERSION"]},
+        {"name": "layout-schema", "paths": ["models/worktrees.schema.json"]},
+        {"name": "planner-and-inventory", "paths": ["operations/conformance.py"]},
+        {"name": "conformance-tests", "paths": ["operations/conformance_test.py"]}
+      ],
+      "responsibilityChanges": false,
+      "interfaceChanges": [
+        "wellmanifest.worktrees/v4 layout record",
+        "wellmanifest.worktrees/v4 inventory record",
+        "Planner input changes from workspace root to primary checkout"
+      ],
+      "dataChanges": [
+        "Delivery worktrees move to <primaryCheckout>/worktrees/<ticket>--<slug>",
+        "Lease records move to <primaryCheckout>/.subactor/leases/<ticket>--<slug>.json",
+        "Every new layout record declares linkMode=relative and minimumGitVersion=2.51.0"
+      ],
+      "ui": {"impact": "none", "states": [], "evidence": []},
+      "rollback": "Revert before runtime adoption; inventory never mutates legacy paths, and existing worktrees remain preserved for an explicitly authorized migration."
+    },
+    "runtimeDependencies": [],
+    "validation": [
+      {
+        "criterion": "AC-01",
+        "commands": ["python3 operations/conformance_test.py"],
+        "evidence": "POSIX and Windows plans conform exactly to the repository-local v4 layout."
+      },
+      {
+        "criterion": "AC-02",
+        "commands": ["python3 operations/conformance_test.py"],
+        "evidence": "Read-only inventory classifies v1, v2, v3, v4, /tmp, duplicate and unknown registered worktrees."
+      },
+      {
+        "criterion": "AC-03",
+        "commands": ["python3 operations/conformance_test.py"],
+        "evidence": "A scratch repository demonstrates relocation failure for absolute links and recovery through git worktree repair --relative-paths."
+      },
+      {
+        "criterion": "AC-04",
+        "commands": ["python3 operations/conformance.py feature-probe"],
+        "evidence": "The local Git meets 2.51.0 and exposes relative-path add and repair flags."
+      },
+      {
+        "criterion": "AC-05",
+        "commands": ["./project/governance-check.sh --actor agent --base origin/main --head HEAD", "git diff --check origin/main...HEAD"],
+        "evidence": "The exact governed release diff passes without changing files outside the approved scope."
+      }
+    ]
+  }
+}
