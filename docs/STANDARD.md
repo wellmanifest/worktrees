@@ -1,6 +1,6 @@
 # Wellmanifest Worktrees Standard
 
-Version: 0.1.0-dev
+Version: 0.2.0
 
 ## Purpose
 
@@ -21,8 +21,10 @@ Given workspace root `<workspace>`, repository name `<repo>`, ticket identifier
 |-- <repo>/
 `-- .worktrees/
     |-- .leases/
-    |   `-- <repo>--ticket-NNN--<slug>.json
-    `-- <repo>--ticket-NNN--<slug>/
+    |   `-- <repo>/
+    |       `-- ticket-NNN--<slug>.json
+    `-- <repo>/
+        `-- ticket-NNN--<slug>/
 ```
 
 The corresponding branch is `ticket/NNN-<slug>`.
@@ -31,8 +33,8 @@ Example:
 
 ```text
 /home/tom/github/wellmanifest/new-project
-/home/tom/github/wellmanifest/.worktrees/new-project--ticket-127--worktrees-standard
-/home/tom/github/wellmanifest/.worktrees/.leases/new-project--ticket-127--worktrees-standard.json
+/home/tom/github/wellmanifest/.worktrees/new-project/ticket-127--worktrees-standard
+/home/tom/github/wellmanifest/.worktrees/.leases/new-project/ticket-127--worktrees-standard.json
 ticket/127-worktrees-standard
 ```
 
@@ -42,10 +44,11 @@ The same segments apply on Windows with the native separator.
 
 1. The worktree root MUST be `<workspace>/.worktrees` and MUST be a sibling of
    the primary repository checkout.
-2. A worktree directory MUST be named
-   `<repo>--<ticket-id>--<slug>`.
-3. A lease MUST use the same stem under `.worktrees/.leases` and the `.json`
-   suffix.
+2. Every repository MUST have exactly one namespace directory named `<repo>`
+   directly under the shared worktree root. A delivery worktree inside it MUST
+   be named `<ticket-id>--<slug>`.
+3. A lease MUST use the same repository namespace and delivery stem under
+   `.worktrees/.leases/<repo>` with the `.json` suffix.
 4. A ticket branch MUST be named `ticket/NNN-<slug>` and MUST identify the same
    ticket and slug as the worktree.
 5. One unit of delivery MUST map to one ticket, one branch, one worktree and one
@@ -72,7 +75,7 @@ canonical layout above. Other checkout classes must remain visibly distinct:
 
 | Class | Writable | Canonical location | Meaning |
 | --- | --- | --- | --- |
-| `delivery` | yes, one lease holder | `<workspace>/.worktrees/<repo>--<ticket>--<slug>` | implementation for one publishable ticket |
+| `delivery` | yes, one lease holder | `<workspace>/.worktrees/<repo>/<ticket>--<slug>` | implementation for one publishable ticket |
 | `validation-snapshot` | no | runtime-owned ephemeral storage | exact-head, read-only validation input |
 | `deployment-snapshot` | no | runtime-owned deployment storage | immutable release/deployment input |
 | `runtime-data` | not a Git worktree | runtime-owned state directory | queues, logs, caches and service state |
@@ -80,6 +83,25 @@ canonical layout above. Other checkout classes must remain visibly distinct:
 A runtime MUST NOT classify a deployment checkout, validator snapshot, cache or
 service directory as a delivery worktree merely to exempt it from cleanup. A
 delivery worktree MUST NOT contain another clone or another `.worktrees` root.
+
+## Compatibility and migration
+
+Version 2 replaces the version 1 flat directory
+`<repo>--<ticket>--<slug>` with the repository-nested form. Runtimes MUST use
+version 2 for every new delivery allocation. They MUST classify a registered
+version 1 path as legacy and MUST NOT silently rename, remove or reuse it.
+
+Migration is an explicit runtime operation after observing dirty state, running
+processes, IDE/tool bindings, lease state, open pull requests and commit
+reachability. When safe and separately authorized, use `git worktree move` for
+the exact registered path, update the exact lease binding, then verify `git
+worktree list --porcelain`. Unknown or active work remains in place until its
+delivery becomes terminal.
+
+The nested layout adds one directory level and a repository rename changes the
+namespace. These costs are preferable to an unstructured flat root: per-repo
+inventory is direct, ticket numbers may repeat safely across repositories, and
+tools can watch or authorize one repository subtree without name parsing.
 
 ## Lease and single-writer requirements
 
