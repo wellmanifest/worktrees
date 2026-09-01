@@ -1,0 +1,57 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-007",
+  "summary": "Remove legacy mandatory ticket carriers",
+  "workstream": "governance",
+  "classification": {
+    "kind": "BUG",
+    "priority": "P1",
+    "origin": "health"
+  },
+  "allowedPaths": [
+    "project/ticket-007/**",
+    "project/TICKETS.md",
+    ".governance/manifest.json"
+  ],
+  "forbiddenPaths": ["project/ticket-*/user-*.md"],
+  "stacks": [],
+  "dependsOn": [],
+  "conflictsWith": [],
+  "integrationTicket": null,
+  "delivery": {
+    "acceptedBaseSha": "eae16da760ff4d13e8b2eec00db4357cc30a52e1",
+    "targetBranch": "main",
+    "outcome": "Require only bounded intent carriers and stop generating mandatory participant prose or raw log files.",
+    "nonGoals": [
+      "Delete historical ticket evidence",
+      "Change ticket status semantics",
+      "Change the worktrees domain contract"
+    ],
+    "complexity": "XS",
+    "estimatedMinutes": 10,
+    "budgets": {
+      "maxImplementationFiles": 1,
+      "maxAffectedComponents": 1,
+      "maxPublicInterfaceChanges": 0,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Align the target manifest ticket requirements with the adopted 0.19.18 managed base.",
+      "components": [
+        {"name": "ticket-carrier-policy", "paths": [".governance/manifest.json"]}
+      ],
+      "responsibilityChanges": false,
+      "interfaceChanges": [],
+      "dataChanges": [],
+      "ui": {"impact": "none", "states": [], "evidence": []},
+      "rollback": "Revert the manifest change; historical ticket files are not removed."
+    },
+    "runtimeDependencies": [],
+    "validation": [
+      {"criterion": "AC-01", "commands": ["./project/governance-check.sh --actor agent --base origin/main --head HEAD"], "evidence": "Minimal ticket passes governance."},
+      {"criterion": "AC-02", "commands": ["python3 -m json.tool .governance/manifest.json"], "evidence": "Manifest declares no mandatory agent files."},
+      {"criterion": "AC-03", "commands": ["git diff --check"], "evidence": "Atomic config diff is clean."}
+    ]
+  }
+}
