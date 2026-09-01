@@ -1,0 +1,73 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-008",
+  "summary": "Reserve collision-proof branch worktree namespace",
+  "workstream": "integration",
+  "classification": {
+    "kind": "BUG",
+    "priority": "P1",
+    "origin": "regression"
+  },
+  "allowedPaths": [
+    "project/ticket-008/**",
+    "VERSION",
+    "docs/**",
+    "models/worktrees.schema.json",
+    "operations/conformance.py",
+    "operations/conformance_test.py"
+  ],
+  "forbiddenPaths": ["project/ticket-*/user-*.md"],
+  "stacks": [],
+  "dependsOn": [],
+  "conflictsWith": [],
+  "integrationTicket": null,
+  "placement": {
+    "home": "wellmanifest",
+    "shape": "domain_pack",
+    "runtimeOwner": "wellmanifest",
+    "adopt": ["wellmanifest/new-project", "wellmanifest/worktrees"]
+  },
+  "delivery": {
+    "acceptedBaseSha": "9d342c817c06d70e60711728f292feeaf85b1e44",
+    "targetBranch": "main",
+    "outcome": "Publish a collision-proof worktree contract under the reserved .worktrees/.branches namespace.",
+    "nonGoals": [
+      "Do not move or delete existing worktrees automatically",
+      "Do not remove legacy workspace symlinks"
+    ],
+    "complexity": "M",
+    "estimatedMinutes": 35,
+    "budgets": {
+      "maxImplementationFiles": 9,
+      "maxAffectedComponents": 3,
+      "maxPublicInterfaceChanges": 2,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Use a reserved .branches directory below .worktrees and reject symlink traversal in every canonical path component.",
+      "components": [
+        {"name": "contract", "paths": ["models/**", "docs/**"]},
+        {"name": "conformance", "paths": ["operations/**"]},
+        {"name": "release", "paths": ["VERSION", "project/ticket-008/**"]}
+      ],
+      "responsibilityChanges": false,
+      "interfaceChanges": [
+        "Canonical worktree paths include the reserved .branches namespace",
+        "Symlinked canonical path components are invalid"
+      ],
+      "dataChanges": [],
+      "ui": {"impact": "none", "states": [], "evidence": []},
+      "rollback": "Publish a later corrective version while preserving immutable release history."
+    },
+    "runtimeDependencies": [],
+    "validation": [{
+      "criterion": "AC-01",
+      "commands": [
+        "python3 operations/conformance_test.py",
+        "./project/governance-check.sh --actor agent --base origin/main --head HEAD"
+      ],
+      "evidence": "Deterministic path and symlink fixtures plus the exact governed diff."
+    }]
+  }
+}

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://wellmanifest.org/schemas/worktrees/v2",
+  "$id": "https://wellmanifest.org/schemas/worktrees/v3",
   "title": "Wellmanifest worktree layout record",
   "type": "object",
   "additionalProperties": false,
@@ -16,12 +16,13 @@
     "workspaceRoot",
     "primaryCheckout",
     "worktreesRoot",
+    "branchWorktreesRoot",
     "repositoryWorktreesRoot",
     "worktreePath",
     "leasePath"
   ],
   "properties": {
-    "schema": {"const": "wellmanifest.worktrees/v2"},
+    "schema": {"const": "wellmanifest.worktrees/v3"},
     "kind": {"const": "layout-record"},
     "repository": {"type": "string", "minLength": 1},
     "repositoryName": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
@@ -32,6 +33,7 @@
     "workspaceRoot": {"type": "string", "minLength": 1},
     "primaryCheckout": {"type": "string", "minLength": 1},
     "worktreesRoot": {"type": "string", "minLength": 1},
+    "branchWorktreesRoot": {"type": "string", "minLength": 1},
     "repositoryWorktreesRoot": {"type": "string", "minLength": 1},
     "worktreePath": {"type": "string", "minLength": 1},
     "leasePath": {"type": "string", "minLength": 1}
