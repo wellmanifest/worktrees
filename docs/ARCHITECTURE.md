@@ -17,11 +17,11 @@ Subactor, Semcod or another runtime to implement the effect and operational
 controls.
 
 The layout record is the boundary interface. Consumers should persist its
-`wellmanifest.worktrees/v2` representation beside the receipt for worktree
+`wellmanifest.worktrees/v3` representation beside the receipt for worktree
 creation, use or cleanup.
 
-The shared root has two parallel repository namespaces: delivery paths under
-`.worktrees/<repo>/` and non-worktree lease data under
+The shared root has two reserved parallel namespaces: delivery paths under
+`.worktrees/.branches/<repo>/` and non-worktree lease data under
 `.worktrees/.leases/<repo>/`. Keeping `.leases` outside a Git worktree subtree
 prevents discovery tools from treating runtime state as a checkout.
 

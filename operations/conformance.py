@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""Pure planner and validator for wellmanifest.worktrees/v2."""
+"""Planner and read-only validator for wellmanifest.worktrees/v3."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
-from pathlib import PurePosixPath, PureWindowsPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
 
 
@@ -48,9 +49,10 @@ def plan(
     root = path_type(workspace_root)
     stem = f"{ticket}--{slug}"
     worktrees_root = root / ".worktrees"
-    repository_worktrees_root = worktrees_root / repository_name
+    branch_worktrees_root = worktrees_root / ".branches"
+    repository_worktrees_root = branch_worktrees_root / repository_name
     return {
-        "schema": "wellmanifest.worktrees/v2",
+        "schema": "wellmanifest.worktrees/v3",
         "kind": "layout-record",
         "repository": repository,
         "repositoryName": repository_name,
@@ -61,6 +63,7 @@ def plan(
         "workspaceRoot": str(root),
         "primaryCheckout": str(root / repository_name),
         "worktreesRoot": str(worktrees_root),
+        "branchWorktreesRoot": str(branch_worktrees_root),
         "repositoryWorktreesRoot": str(repository_worktrees_root),
         "worktreePath": str(repository_worktrees_root / stem),
         "leasePath": str(worktrees_root / ".leases" / repository_name / f"{stem}.json"),
@@ -101,6 +104,45 @@ def validate(record: dict[str, Any]) -> list[str]:
     return errors
 
 
+def validate_filesystem(record: dict[str, Any]) -> list[str]:
+    """Reject symlink traversal in existing canonical path components."""
+    errors = validate(record)
+    if errors:
+        return errors
+    native_style = "windows" if os.name == "nt" else "posix"
+    if record["pathStyle"] != native_style:
+        return ["filesystem_check_unsupported:pathStyle"]
+
+    workspace_root = Path(record["workspaceRoot"])
+    checked: set[Path] = set()
+    fields = (
+        "workspaceRoot",
+        "worktreesRoot",
+        "branchWorktreesRoot",
+        "repositoryWorktreesRoot",
+        "worktreePath",
+        "leasePath",
+    )
+    for field in fields:
+        target = Path(record[field])
+        try:
+            relative = target.relative_to(workspace_root)
+        except ValueError:
+            return [f"filesystem_noncanonical:{field}"]
+        current = workspace_root
+        candidates = [(current, ".")]
+        for part in relative.parts:
+            current = current / part
+            candidates.append((current, str(current.relative_to(workspace_root))))
+        for candidate, relative_name in candidates:
+            if candidate in checked:
+                continue
+            checked.add(candidate)
+            if candidate.is_symlink():
+                errors.append(f"symlink_component:{field}:{relative_name}")
+    return errors
+
+
 def _read_json(path: str) -> dict[str, Any]:
     if path == "-":
         return json.load(sys.stdin)
@@ -120,6 +162,11 @@ def main() -> int:
     planner.add_argument("--path-style", choices=("posix", "windows"), default="posix")
     validator = subparsers.add_parser("validate")
     validator.add_argument("record", help="JSON file or - for stdin")
+    validator.add_argument(
+        "--check-filesystem",
+        action="store_true",
+        help="reject symlinks in existing canonical path components",
+    )
     args = parser.parse_args()
 
     if args.command == "plan":
@@ -134,7 +181,8 @@ def main() -> int:
         print(json.dumps(record, indent=2))
         return 0
 
-    errors = validate(_read_json(args.record))
+    record = _read_json(args.record)
+    errors = validate_filesystem(record) if args.check_filesystem else validate(record)
     print(json.dumps({"ok": not errors, "errors": errors}, indent=2))
     return 0 if not errors else 1
 

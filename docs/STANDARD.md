@@ -1,6 +1,6 @@
 # Wellmanifest Worktrees Standard
 
-Version: 0.2.0
+Version: 0.3.0
 
 ## Purpose
 
@@ -20,11 +20,12 @@ Given workspace root `<workspace>`, repository name `<repo>`, ticket identifier
 <workspace>/
 |-- <repo>/
 `-- .worktrees/
+    |-- .branches/
+    |   `-- <repo>/
+    |       `-- ticket-NNN--<slug>/
     |-- .leases/
     |   `-- <repo>/
     |       `-- ticket-NNN--<slug>.json
-    `-- <repo>/
-        `-- ticket-NNN--<slug>/
 ```
 
 The corresponding branch is `ticket/NNN-<slug>`.
@@ -33,7 +34,7 @@ Example:
 
 ```text
 /home/tom/github/wellmanifest/new-project
-/home/tom/github/wellmanifest/.worktrees/new-project/ticket-127--worktrees-standard
+/home/tom/github/wellmanifest/.worktrees/.branches/new-project/ticket-127--worktrees-standard
 /home/tom/github/wellmanifest/.worktrees/.leases/new-project/ticket-127--worktrees-standard.json
 ticket/127-worktrees-standard
 ```
@@ -44,9 +45,10 @@ The same segments apply on Windows with the native separator.
 
 1. The worktree root MUST be `<workspace>/.worktrees` and MUST be a sibling of
    the primary repository checkout.
-2. Every repository MUST have exactly one namespace directory named `<repo>`
-   directly under the shared worktree root. A delivery worktree inside it MUST
-   be named `<ticket-id>--<slug>`.
+2. Writable branch worktrees MUST live under the reserved `.branches`
+   directory. Every repository MUST have exactly one namespace directory named
+   `<repo>` below `.worktrees/.branches`; a delivery worktree inside it MUST be
+   named `<ticket-id>--<slug>`.
 3. A lease MUST use the same repository namespace and delivery stem under
    `.worktrees/.leases/<repo>` with the `.json` suffix.
 4. A ticket branch MUST be named `ticket/NNN-<slug>` and MUST identify the same
@@ -67,6 +69,9 @@ The same segments apply on Windows with the native separator.
 9. Cleanup MUST be lease-aware and MUST verify ticket, branch, pull request,
    process and dirty-worktree state. This standard does not itself authorize
    cleanup.
+10. Before any filesystem or Git effect, a runtime MUST reject an existing
+    symbolic link in the canonical path from `<workspace>` through the
+    delivery worktree or lease. It MUST NOT resolve such a link and continue.
 
 ## Workspace classes
 
@@ -75,7 +80,7 @@ canonical layout above. Other checkout classes must remain visibly distinct:
 
 | Class | Writable | Canonical location | Meaning |
 | --- | --- | --- | --- |
-| `delivery` | yes, one lease holder | `<workspace>/.worktrees/<repo>/<ticket>--<slug>` | implementation for one publishable ticket |
+| `delivery` | yes, one lease holder | `<workspace>/.worktrees/.branches/<repo>/<ticket>--<slug>` | implementation for one publishable ticket |
 | `validation-snapshot` | no | runtime-owned ephemeral storage | exact-head, read-only validation input |
 | `deployment-snapshot` | no | runtime-owned deployment storage | immutable release/deployment input |
 | `runtime-data` | not a Git worktree | runtime-owned state directory | queues, logs, caches and service state |
@@ -86,10 +91,15 @@ delivery worktree MUST NOT contain another clone or another `.worktrees` root.
 
 ## Compatibility and migration
 
-Version 2 replaces the version 1 flat directory
+Version 3 reserves `.worktrees/.branches` for delivery worktrees. This avoids
+collisions with legacy workspace indexes that placed repository symlinks at
+`.worktrees/<repo>`. A runtime MUST NOT traverse or replace those symlinks.
+
+Version 2 replaced the version 1 flat directory
 `<repo>--<ticket>--<slug>` with the repository-nested form. Runtimes MUST use
-version 2 for every new delivery allocation. They MUST classify a registered
-version 1 path as legacy and MUST NOT silently rename, remove or reuse it.
+version 3 for every new delivery allocation. They MUST classify registered
+version 1 and version 2 paths as legacy and MUST NOT silently rename, remove or
+reuse them.
 
 Migration is an explicit runtime operation after observing dirty state, running
 processes, IDE/tool bindings, lease state, open pull requests and commit

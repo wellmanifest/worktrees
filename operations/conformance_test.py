@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
+import os
+import tempfile
 import unittest
+from pathlib import Path
 
-from conformance import plan, validate
+from conformance import plan, validate, validate_filesystem
 
 
 class WorktreeConformanceTest(unittest.TestCase):
@@ -17,7 +20,7 @@ class WorktreeConformanceTest(unittest.TestCase):
         self.assertEqual(record["branch"], "ticket/127-worktrees-standard")
         self.assertEqual(
             record["worktreePath"],
-            "/home/tom/github/wellmanifest/.worktrees/new-project/ticket-127--worktrees-standard",
+            "/home/tom/github/wellmanifest/.worktrees/.branches/new-project/ticket-127--worktrees-standard",
         )
         self.assertEqual(validate(record), [])
 
@@ -85,7 +88,10 @@ class WorktreeConformanceTest(unittest.TestCase):
             workspace_root="/workspace/subactor",
         )
         self.assertNotEqual(left["worktreePath"], right["worktreePath"])
-        self.assertEqual(left["repositoryWorktreesRoot"], "/workspace/subactor/.worktrees/platform")
+        self.assertEqual(
+            left["repositoryWorktreesRoot"],
+            "/workspace/subactor/.worktrees/.branches/platform",
+        )
 
     def test_rejects_legacy_flat_layout(self):
         record = plan(
@@ -97,6 +103,43 @@ class WorktreeConformanceTest(unittest.TestCase):
         )
         record["worktreePath"] = "/workspace/wellmanifest/.worktrees/new-project--ticket-127--worktrees-standard"
         self.assertIn("noncanonical:worktreePath", validate(record))
+
+    @unittest.skipIf(os.name == "nt", "POSIX symlink fixture")
+    def test_reserved_namespace_ignores_legacy_repository_symlink(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "new-project").mkdir()
+            (root / ".worktrees" / ".branches" / "new-project").mkdir(parents=True)
+            (root / ".worktrees" / "legacy-target").mkdir()
+            (root / ".worktrees" / "new-project").symlink_to("legacy-target")
+            record = plan(
+                repository="wellmanifest/new-project",
+                repository_name="new-project",
+                ticket="ticket-127",
+                slug="worktrees-standard",
+                workspace_root=str(root),
+            )
+            self.assertEqual(validate_filesystem(record), [])
+
+    @unittest.skipIf(os.name == "nt", "POSIX symlink fixture")
+    def test_rejects_symlink_inside_reserved_namespace(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "new-project").mkdir()
+            (root / ".worktrees").mkdir()
+            (root / "redirected").mkdir()
+            (root / ".worktrees" / ".branches").symlink_to(root / "redirected")
+            record = plan(
+                repository="wellmanifest/new-project",
+                repository_name="new-project",
+                ticket="ticket-127",
+                slug="worktrees-standard",
+                workspace_root=str(root),
+            )
+            self.assertIn(
+                "symlink_component:branchWorktreesRoot:.worktrees/.branches",
+                validate_filesystem(record),
+            )
 
 
 if __name__ == "__main__":
