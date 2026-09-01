@@ -1,0 +1,72 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-009",
+  "summary": "Adopt new-project 0.19.22 before Worktrees v4",
+  "workstream": "governance",
+  "classification": {
+    "kind": "SERVICE",
+    "priority": "P1",
+    "origin": "requested"
+  },
+  "allowedPaths": [
+    "project/ticket-009/**",
+    "project/TICKETS.md",
+    "project/new-ticket.sh",
+    ".governance/**",
+    "AGENTS.md"
+  ],
+  "forbiddenPaths": ["project/ticket-*/user-*.md"],
+  "stacks": [],
+  "dependsOn": [],
+  "conflictsWith": [],
+  "integrationTicket": null,
+  "placement": {
+    "home": "wellmanifest",
+    "shape": "domain_pack",
+    "runtimeOwner": "wellmanifest",
+    "adopt": ["wellmanifest/new-project", "wellmanifest/worktrees"]
+  },
+  "delivery": {
+    "acceptedBaseSha": "49ab80b6a4a165add0b5e087f10b0ecb754f1514",
+    "targetBranch": "main",
+    "outcome": "Adopt the immutable new-project 0.19.22 governance projection without changing the Worktrees domain version.",
+    "nonGoals": [
+      "Do not implement the Worktrees v4 layout in this adoption ticket",
+      "Do not rewrite repository-owned domain documentation",
+      "Do not close historical ticket prose after merge"
+    ],
+    "complexity": "L",
+    "estimatedMinutes": 45,
+    "budgets": {
+      "maxImplementationFiles": 15,
+      "maxAffectedComponents": 3,
+      "maxPublicInterfaceChanges": 1,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Use Goal's digest-verified immutable adoption transaction against the published 0.19.22 commit.",
+      "components": [
+        {"name": "managed-governance", "paths": [".governance/**", "AGENTS.md", "project/new-ticket.sh"]},
+        {"name": "ticket-intent", "paths": ["project/ticket-009/**", "project/TICKETS.md"]}
+      ],
+      "responsibilityChanges": false,
+      "interfaceChanges": ["The adopter consumes the 0.19.22 work-continuity governance contract"],
+      "dataChanges": [],
+      "ui": {"impact": "none", "states": [], "evidence": []},
+      "rollback": "Adopt a later immutable corrective release; never rewrite the published source revision."
+    },
+    "runtimeDependencies": [],
+    "validation": [
+      {
+        "criterion": "AC-01",
+        "commands": [
+          "goal governance adopt --source-revision f7fe7163e886d5540cedf83d383b6dd99daafd7c --target-root . --check",
+          "python3 operations/conformance_test.py",
+          "./project/governance-check.sh --actor agent --base origin/main --head HEAD"
+        ],
+        "evidence": "The immutable adoption plan is empty and both domain and governed exact-diff checks pass."
+      }
+    ]
+  }
+}
