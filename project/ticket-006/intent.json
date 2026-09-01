@@ -1,0 +1,57 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-006",
+  "summary": "Separate domain tests from range-aware governance",
+  "workstream": "infrastructure",
+  "classification": {
+    "kind": "BUG",
+    "priority": "P1",
+    "origin": "health"
+  },
+  "allowedPaths": [
+    "project/ticket-006/**",
+    "project/TICKETS.md",
+    ".github/workflows/ci.yml"
+  ],
+  "forbiddenPaths": ["project/ticket-*/user-*.md"],
+  "stacks": [],
+  "dependsOn": [],
+  "conflictsWith": [],
+  "integrationTicket": null,
+  "delivery": {
+    "acceptedBaseSha": "eae16da760ff4d13e8b2eec00db4357cc30a52e1",
+    "targetBranch": "main",
+    "outcome": "Make the required test job domain-specific and leave governance to the managed range-aware gate.",
+    "nonGoals": [
+      "Change required-check names",
+      "Change the worktrees layout contract",
+      "Rewrite terminal ticket state"
+    ],
+    "complexity": "XS",
+    "estimatedMinutes": 10,
+    "budgets": {
+      "maxImplementationFiles": 1,
+      "maxAffectedComponents": 1,
+      "maxPublicInterfaceChanges": 0,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Use the custom test job for domain tests and the managed governance workflow for base/head-scoped policy evaluation.",
+      "components": [
+        {"name": "repository-ci", "paths": [".github/workflows/ci.yml"]}
+      ],
+      "responsibilityChanges": false,
+      "interfaceChanges": [],
+      "dataChanges": [],
+      "ui": {"impact": "none", "states": [], "evidence": []},
+      "rollback": "Revert the workflow commit; managed governance remains independently required."
+    },
+    "runtimeDependencies": [],
+    "validation": [
+      {"criterion": "AC-01", "commands": ["python3 operations/conformance_test.py", "python3 -m json.tool models/worktrees.schema.json"], "evidence": "Domain tests and schema validation pass."},
+      {"criterion": "AC-02", "commands": ["./project/governance-check.sh --actor agent --base origin/main --head HEAD"], "evidence": "Range-aware governance passes."},
+      {"criterion": "AC-03", "commands": ["python3 .governance/check_required_checks.py --root ."], "evidence": "Required-check names remain published."}
+    ]
+  }
+}
