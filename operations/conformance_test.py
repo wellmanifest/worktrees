@@ -17,7 +17,7 @@ class WorktreeConformanceTest(unittest.TestCase):
         self.assertEqual(record["branch"], "ticket/127-worktrees-standard")
         self.assertEqual(
             record["worktreePath"],
-            "/home/tom/github/wellmanifest/.worktrees/new-project--ticket-127--worktrees-standard",
+            "/home/tom/github/wellmanifest/.worktrees/new-project/ticket-127--worktrees-standard",
         )
         self.assertEqual(validate(record), [])
 
@@ -32,7 +32,7 @@ class WorktreeConformanceTest(unittest.TestCase):
         )
         self.assertEqual(
             record["leasePath"],
-            "C:\\github\\wellmanifest\\.worktrees\\.leases\\new-project--ticket-127--worktrees-standard.json",
+            "C:\\github\\wellmanifest\\.worktrees\\.leases\\new-project\\ticket-127--worktrees-standard.json",
         )
         self.assertEqual(validate(record), [])
 
@@ -67,6 +67,35 @@ class WorktreeConformanceTest(unittest.TestCase):
             workspace_root="/home/tom/github/subactor",
         )
         record["worktreePath"] = "/home/tom/github/subactor-worktrees/subllm-ticket12-release-1-4-1"
+        self.assertIn("noncanonical:worktreePath", validate(record))
+
+    def test_repository_namespaces_prevent_cross_repo_collision(self):
+        left = plan(
+            repository="subactor/platform",
+            repository_name="platform",
+            ticket="ticket-123",
+            slug="precise-change",
+            workspace_root="/workspace/subactor",
+        )
+        right = plan(
+            repository="subactor/core",
+            repository_name="core",
+            ticket="ticket-123",
+            slug="precise-change",
+            workspace_root="/workspace/subactor",
+        )
+        self.assertNotEqual(left["worktreePath"], right["worktreePath"])
+        self.assertEqual(left["repositoryWorktreesRoot"], "/workspace/subactor/.worktrees/platform")
+
+    def test_rejects_legacy_flat_layout(self):
+        record = plan(
+            repository="wellmanifest/new-project",
+            repository_name="new-project",
+            ticket="ticket-127",
+            slug="worktrees-standard",
+            workspace_root="/workspace/wellmanifest",
+        )
+        record["worktreePath"] = "/workspace/wellmanifest/.worktrees/new-project--ticket-127--worktrees-standard"
         self.assertIn("noncanonical:worktreePath", validate(record))
 
 

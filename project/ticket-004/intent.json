@@ -1,0 +1,76 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-004",
+  "summary": "Canonicalize nested repository worktree layout",
+  "workstream": "integration",
+  "classification": {
+    "kind": "FEATURE",
+    "priority": "P1",
+    "origin": "requested"
+  },
+  "allowedPaths": [
+    "project/ticket-004/**",
+    "project/ticket-003/README.md",
+    "project/TICKETS.md",
+    "VERSION",
+    "docs/STANDARD.md",
+    "docs/ARCHITECTURE.md",
+    "models/worktrees.schema.json",
+    "operations/conformance.py",
+    "operations/conformance_test.py"
+  ],
+  "forbiddenPaths": ["project/ticket-*/user-*.md"],
+  "stacks": [],
+  "dependsOn": [],
+  "conflictsWith": [],
+  "integrationTicket": null,
+  "placement": {
+    "home": "wellmanifest",
+    "shape": "domain_pack",
+    "runtimeOwner": "subactor",
+    "adopt": ["wellmanifest/new-project"]
+  },
+  "delivery": {
+    "acceptedBaseSha": "7de5b72d9a0de2f5924b6b2d43ccd6bdc5340d8b",
+    "targetBranch": "main",
+    "outcome": "Publish one repository-nested workspace worktree layout and deterministic conformance contract.",
+    "nonGoals": [
+      "Move or delete existing worktrees",
+      "Execute Git or filesystem effects",
+      "Own ticket, branch or merge lifecycle semantics"
+    ],
+    "complexity": "M",
+    "estimatedMinutes": 30,
+    "budgets": {
+      "maxImplementationFiles": 7,
+      "maxAffectedComponents": 3,
+      "maxPublicInterfaceChanges": 2,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Namespace delivery worktrees and leases by repository below the shared workspace root and version the breaking record as v2.",
+      "components": [
+        {"name": "normative-contract", "paths": ["docs/**", "VERSION"]},
+        {"name": "layout-model", "paths": ["models/**"]},
+        {"name": "conformance-query", "paths": ["operations/**"]}
+      ],
+      "responsibilityChanges": false,
+      "interfaceChanges": [
+        "wellmanifest.worktrees/v2 layout record",
+        "repositoryWorktreesRoot layout field"
+      ],
+      "dataChanges": ["Canonical worktree and lease paths gain a repository directory segment."],
+      "ui": {"impact": "none", "states": [], "evidence": []},
+      "rollback": "Revert before adoption; already-created legacy worktrees remain untouched."
+    },
+    "runtimeDependencies": [],
+    "validation": [
+      {"criterion": "AC-01", "commands": ["python3 operations/conformance_test.py"], "evidence": "POSIX and Windows layouts pass."},
+      {"criterion": "AC-02", "commands": ["python3 operations/conformance_test.py"], "evidence": "Repository namespaces prevent cross-repository path collisions."},
+      {"criterion": "AC-03", "commands": ["python3 operations/conformance_test.py"], "evidence": "Noncanonical layouts fail."},
+      {"criterion": "AC-04", "commands": ["git diff --check"], "evidence": "Migration and compatibility rules are documented."},
+      {"criterion": "AC-05", "commands": ["./project/governance-check.sh --actor agent", "git diff --check"], "evidence": "Repository gates pass."}
+    ]
+  }
+}

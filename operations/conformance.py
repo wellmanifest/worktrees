@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pure planner and validator for wellmanifest.worktrees/v1."""
+"""Pure planner and validator for wellmanifest.worktrees/v2."""
 
 from __future__ import annotations
 
@@ -46,10 +46,11 @@ def plan(
 
     path_type = _path_type(path_style)
     root = path_type(workspace_root)
-    stem = f"{repository_name}--{ticket}--{slug}"
+    stem = f"{ticket}--{slug}"
     worktrees_root = root / ".worktrees"
+    repository_worktrees_root = worktrees_root / repository_name
     return {
-        "schema": "wellmanifest.worktrees/v1",
+        "schema": "wellmanifest.worktrees/v2",
         "kind": "layout-record",
         "repository": repository,
         "repositoryName": repository_name,
@@ -60,8 +61,9 @@ def plan(
         "workspaceRoot": str(root),
         "primaryCheckout": str(root / repository_name),
         "worktreesRoot": str(worktrees_root),
-        "worktreePath": str(worktrees_root / stem),
-        "leasePath": str(worktrees_root / ".leases" / f"{stem}.json"),
+        "repositoryWorktreesRoot": str(repository_worktrees_root),
+        "worktreePath": str(repository_worktrees_root / stem),
+        "leasePath": str(worktrees_root / ".leases" / repository_name / f"{stem}.json"),
     }
 
 
