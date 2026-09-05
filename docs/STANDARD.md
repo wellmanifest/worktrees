@@ -1,6 +1,6 @@
 # Wellmanifest Worktrees Standard
 
-Version: 0.4.0
+Version: 0.4.1
 
 ## Purpose
 
@@ -107,7 +107,13 @@ This rule prevents an allocator invoked from
 ## Read-only inventory
 
 Inventory consumes Git's registered worktree records and returns
-`kind=inventory-record`, `readOnly=true`. Path classification is deterministic:
+`kind=inventory-record`, `readOnly=true`. Its repository name is an observed
+basename, preserved exactly, including `.github`, mixed case, underscores and
+spaces. Inventory rejects empty names, `.`/`..`, path separators and NUL. The
+normalized repository-name and slug rules above apply to allocation only;
+observing an existing checkout does not authorize creating one.
+
+Path classification is deterministic:
 
 | Classification | Recognized registered path |
 | --- | --- |

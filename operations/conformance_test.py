@@ -15,6 +15,31 @@ from conformance import (
 
 
 class WorktreeConformanceTest(unittest.TestCase):
+    def test_inventory_preserves_observed_repository_names(self):
+        for style, root in (("posix", "/workspace"), ("windows", "C:/workspace")):
+            for name in (".github", "Repo_Name.v2", "my repo", "repo--legacy"):
+                with self.subTest(style=style, name=name):
+                    primary = f"{root}/{name}"
+                    record = inventory(
+                        repository=f"org/{name}", repository_name=name,
+                        primary_checkout=primary, path_style=style,
+                        registered=[{"path": primary, "branch": "main"}],
+                    )
+                    self.assertEqual(record["repositoryName"], name)
+                    self.assertEqual(record["entries"][0]["classification"], "primary")
+                    self.assertTrue(record["readOnly"])
+                    self.assertEqual(validate(record), [])
+                    with self.assertRaises(ValueError):
+                        plan(repository=f"org/{name}", repository_name=name,
+                             ticket="ticket-011", slug="observed-names",
+                             primary_checkout=primary, path_style=style)
+
+    def test_inventory_rejects_non_basename_repository_names(self):
+        for name in ("", ".", "..", "org/repo", "org\\repo", "repo\0name", None):
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                inventory(repository="org/repo", repository_name=name,
+                          primary_checkout="/workspace/repo", registered=[])
+
     def test_posix_layout(self):
         record = plan(
             repository="wellmanifest/new-project",

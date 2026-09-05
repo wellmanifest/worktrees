@@ -1,0 +1,90 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-011",
+  "summary": "Inventory observed repository names without allocation restrictions",
+  "workstream": "integration",
+  "classification": {
+    "kind": "BUG",
+    "priority": "P1",
+    "origin": "regression"
+  },
+  "allowedPaths": [
+    "VERSION",
+    "docs/STANDARD.md",
+    "models/worktrees.schema.json",
+    "operations/conformance.py",
+    "operations/conformance_test.py",
+    "project/ticket-011/**"
+  ],
+  "forbiddenPaths": [
+    "project/ticket-*/user-*.md"
+  ],
+  "stacks": [],
+  "dependsOn": [
+    "ticket-010"
+  ],
+  "conflictsWith": [],
+  "integrationTicket": null,
+  "delivery": {
+    "acceptedBaseSha": "73f9b99227bfbad6ce02834324d053279fb48611",
+    "targetBranch": "main",
+    "outcome": "Publish Worktrees 0.4.1 so observation accepts existing repository basenames including .github without weakening allocation rules.",
+    "nonGoals": [
+      "No live worktree relocation or cleanup",
+      "No allocation-name rule changes",
+      "No runtime dependencies"
+    ],
+    "complexity": "S",
+    "estimatedMinutes": 30,
+    "budgets": {
+      "maxImplementationFiles": 5,
+      "maxAffectedComponents": 2,
+      "maxPublicInterfaceChanges": 1,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Separate observed basename validation from normalized allocation segment validation; preserve repository identity and existing path classification.",
+      "components": [
+        {
+          "name": "inventory-contract",
+          "paths": [
+            "VERSION",
+            "docs/STANDARD.md",
+            "models/worktrees.schema.json"
+          ]
+        },
+        {
+          "name": "conformance",
+          "paths": [
+            "operations/conformance.py",
+            "operations/conformance_test.py"
+          ]
+        }
+      ],
+      "responsibilityChanges": false,
+      "interfaceChanges": [
+        "Inventory accepts existing repository basenames beyond allocation slugs."
+      ],
+      "dataChanges": [],
+      "ui": {
+        "impact": "none",
+        "states": [],
+        "evidence": []
+      },
+      "rollback": "Revert before adoption; observations have no filesystem effects."
+    },
+    "runtimeDependencies": [],
+    "validation": [
+      {
+        "criterion": "AC-01",
+        "commands": [
+          "python3 operations/conformance_test.py",
+          "./project/governance-check.sh",
+          "git diff --check"
+        ],
+        "evidence": "domain conformance tests and protected exact-head review"
+      }
+    ]
+  }
+}
