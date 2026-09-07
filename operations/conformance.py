@@ -1,4 +1,4 @@
-"""Planner, validator and read-only inventory for wellmanifest.worktrees/v4."""
+"""Planner, validator and read-only inventory for wellmanifest.worktrees/v5."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from collections.abc import Callable, Iterable
 from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath
 from typing import Any
 
-SCHEMA = "wellmanifest.worktrees/v4"
+SCHEMA = "wellmanifest.worktrees/v5"
 MINIMUM_GIT_VERSION = "2.51.0"
 NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 TICKET_RE = re.compile(r"^ticket-([0-9]{3,})$")
@@ -43,7 +43,7 @@ def plan(
     primary_checkout: str,
     path_style: str = "posix",
 ) -> dict[str, str]:
-    """Return the canonical v4 layout record for one delivery unit."""
+    """Return the canonical v5 layout record for one delivery unit."""
     _validate_segment("repositoryName", repository_name)
     _validate_segment("slug", slug)
     ticket_match = TICKET_RE.fullmatch(ticket)
@@ -55,7 +55,7 @@ def plan(
     if not primary.is_absolute():
         raise ValueError("primaryCheckout must be absolute")
     stem = f"{ticket}--{slug}"
-    worktrees_root = primary / "worktrees"
+    worktrees_root = primary / ".worktrees"
     lease_root = primary / ".subactor" / "leases"
     return {
         "schema": SCHEMA,
@@ -111,7 +111,7 @@ def validate_layout(record: dict[str, Any]) -> list[str]:
 
 
 def validate(record: dict[str, Any]) -> list[str]:
-    """Validate either public v4 record kind."""
+    """Validate either public v5 record kind."""
     if record.get("kind") == "layout-record":
         return validate_layout(record)
     if record.get("kind") == "inventory-record":
@@ -248,9 +248,13 @@ def classify_path(
     if candidate == primary:
         classification = "primary"
     elif (
+        value := _direct_child_stem(candidate, primary / ".worktrees")
+    ) and STEM_RE.fullmatch(value):
+        classification, layout_version, stem = "canonical-v5", "v5", value
+    elif (
         value := _direct_child_stem(candidate, primary / "worktrees")
     ) and STEM_RE.fullmatch(value):
-        classification, layout_version, stem = "canonical-v4", "v4", value
+        classification, layout_version, stem = "legacy-v4", "v4", value
     elif (
         value := _direct_child_stem(
             candidate, workspace / ".worktrees" / ".branches" / repository_name
