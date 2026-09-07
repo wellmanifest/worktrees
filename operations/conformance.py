@@ -461,7 +461,7 @@ def feature_probe(
                 check=False, capture_output=True, env=env,
             )
             help_text = (result.stdout + result.stderr).decode("utf-8", "replace")
-            options[command] = "relative-paths" in help_text
+            options[command] = result.returncode in (0, 129) and "relative-paths" in help_text
     supported = version_ok and all(options.values())
     return {
         "minimumGitVersion": MINIMUM_GIT_VERSION,

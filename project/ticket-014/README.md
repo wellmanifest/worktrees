@@ -14,4 +14,4 @@ SESSION_EXECUTION_AUTHORIZATION: user requests publication, current Wellmanifest
 
 Canonical rationale: [worktree layout](../../docs/information/worktree-layout.md).
 
-Validation: 15 domain tests passed; managed governance and trusted documentation checker passed. Explicit repository probing works from an organization directory without filesystem changes.
+Validation: 16 domain tests passed; managed governance and trusted documentation checker passed. Explicit repository probing works from an organization directory without filesystem changes.

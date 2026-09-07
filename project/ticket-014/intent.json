@@ -33,9 +33,9 @@
     "complexity": "M",
     "estimatedMinutes": 60,
     "budgets": {
-      "maxImplementationFiles": 10,
-      "maxAffectedComponents": 4,
-      "maxPublicInterfaceChanges": 3,
+      "maxImplementationFiles": 4,
+      "maxAffectedComponents": 2,
+      "maxPublicInterfaceChanges": 1,
       "maxRuntimeDependencies": 0
     },
     "architecture": {
@@ -76,7 +76,7 @@
         "commands": [
           "python3 operations/conformance_test.py"
         ],
-        "evidence": "Pending: POSIX/Windows allocation, v4 legacy classification, relative relocation, symlink rejection."
+        "evidence": "15 conformance tests passed, including explicit context, inherited Git selectors, missing repair flag and old Git."
       },
       {
         "criterion": "AC-02",

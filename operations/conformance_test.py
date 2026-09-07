@@ -267,6 +267,20 @@ class WorktreeConformanceTest(unittest.TestCase):
         self.assertFalse(result["worktreeRepairRelativePaths"])
         self.assertFalse(result["supported"])
 
+    def test_failed_help_does_not_advertise_feature_support(self):
+        def failed_help(args, **_kwargs):
+            if args[-1] == "--version":
+                return subprocess.CompletedProcess(args, 0, b"git version 2.51.0\n", b"")
+            if "rev-parse" in args:
+                return subprocess.CompletedProcess(args, 0, b".git\n", b"")
+            return subprocess.CompletedProcess(args, 128, b"", b"fatal: cannot probe relative-paths\n")
+
+        result = feature_probe(runner=failed_help)
+        self.assertTrue(result["repositoryContextValid"])
+        self.assertFalse(result["worktreeAddRelativePaths"])
+        self.assertFalse(result["worktreeRepairRelativePaths"])
+        self.assertFalse(result["supported"])
+
     def test_probe_from_organization_directory_has_distinct_context_failure(self):
         with tempfile.TemporaryDirectory() as temporary:
             before = list(Path(temporary).iterdir())
