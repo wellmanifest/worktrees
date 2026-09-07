@@ -1,0 +1,140 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-013",
+  "summary": "Adopt hidden worktree policy in the standard repository",
+  "workstream": "integration",
+  "classification": {
+    "kind": "FEATURE",
+    "priority": "P1",
+    "origin": "requested"
+  },
+  "allowedPaths": [
+    ".githooks/pre-commit",
+    ".gitignore",
+    ".governance/AGENT_DECISIONS.md",
+    ".governance/adoption-bindings.json",
+    ".governance/adoption-bindings.schema.json",
+    ".governance/branch-intent-reconciliation.schema.json",
+    ".governance/branch_intent_reconciliation.py",
+    ".governance/branch_lifecycle_check.py",
+    ".governance/diagnostics.json",
+    ".governance/docs.json",
+    ".governance/docs/BRANCH_INTENT_RECONCILIATION.md",
+    ".governance/error/GOV-STANDARD-UPDATE.md",
+    ".governance/error/GOV-TICKET-ACTIVITY.md",
+    ".governance/error/GOV-WORKTREE-OVERLAP.md",
+    ".governance/governance_check.py",
+    ".governance/intent.schema.json",
+    ".governance/manifest.base.json",
+    ".governance/manifest.json",
+    ".governance/manifest.lock.json",
+    ".governance/package-manifest.json",
+    ".governance/precommit_standard_update.py",
+    ".governance/standard-adoption.schema.json",
+    ".governance/templates/conftest-worktree-bootstrap.py",
+    ".governance/ticket-activity.json",
+    ".governance/ticket-activity.schema.json",
+    ".governance/ticket_activity.py",
+    ".governance/work-continuity.schema.json",
+    ".governance/work_continuity.py",
+    ".governance/workspace_lifecycle_check.py",
+    ".governance/worktree_overlap_check.py",
+    ".governance/worktree_path_check.py",
+    ".governance/worktrees.lock.json",
+    ".governance/worktrees.schema.json",
+    ".subactor/.gitignore",
+    ".subactor/manifest.json",
+    "AGENTS.md",
+    "GEMINI.md",
+    "docs/information/worktree-layout.md",
+    "project/ticket-013/README.md",
+    "project/ticket-013/intent.json",
+    "worktree-guard.yaml"
+  ],
+  "forbiddenPaths": [
+    "project/ticket-*/user-*.md"
+  ],
+  "stacks": [],
+  "dependsOn": [],
+  "conflictsWith": [],
+  "integrationTicket": null,
+  "delivery": {
+    "acceptedBaseSha": "87d17708895ffad603c5d71cb2b8ef02ab100279",
+    "targetBranch": "main",
+    "outcome": "Adopt new-project 0.20.8 / Worktrees v5 in the owning standard repository and validate the local standard document under its correct single-owner metadata.",
+    "nonGoals": [
+      "No automatic relocation, repair or removal of existing worktrees",
+      "No new Git effect implementation in the domain pack"
+    ],
+    "complexity": "L",
+    "estimatedMinutes": 120,
+    "budgets": {
+      "maxImplementationFiles": 10,
+      "maxAffectedComponents": 4,
+      "maxPublicInterfaceChanges": 3,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Change the allocation directory in a new contract version; preserve v4 as an explicit legacy inventory class. User request authorizes bootstrapping this ticket directly in the target .worktrees layout despite the adopted older instructions. The integration workstream owns the exact target adoption manifest and anchored ignore configuration for this user-authorized rollout; declare these paths explicitly rather than claim them through arbitrary broad managed exclusions.",
+      "components": [
+        {
+          "name": "adopted-governance",
+          "paths": [
+            "project/TICKETS.md",
+            ".governance/**",
+            ".subactor/**",
+            ".githooks/**",
+            ".gitignore",
+            "AGENTS.md",
+            "GEMINI.md",
+            "CLAUDE.md",
+            ".cursor/**",
+            ".aider.conf.yml",
+            ".github/copilot-instructions.md",
+            "project/new-ticket.sh",
+            "project/readme.sh",
+            "project/governance-check.sh",
+            "project/governance-check.bat",
+            "worktree-guard.yaml"
+          ]
+        },
+        {
+          "name": "standard-document",
+          "paths": [
+            "docs/**"
+          ]
+        }
+      ],
+      "responsibilityChanges": false,
+      "interfaceChanges": [
+        "wellmanifest.worktrees/v5 records and canonical-v5 / legacy-v4 inventory classifications"
+      ],
+      "dataChanges": [
+        "New allocations use <primary>/.worktrees/<ticket>--<slug>; existing v4 paths remain observable and preserved."
+      ],
+      "ui": {
+        "impact": "none",
+        "states": [],
+        "evidence": []
+      },
+      "rollback": "Revert before runtime adoption; inventory never mutates legacy paths, and existing worktrees remain preserved for an explicitly authorized migration."
+    },
+    "runtimeDependencies": [],
+    "validation": [
+      {
+        "criterion": "AC-01",
+        "commands": [
+          "python3 operations/conformance_test.py",
+          "./project/governance-check.sh"
+        ],
+        "evidence": "Pending immutable adoption and standard regression tests."
+      }
+    ],
+    "standardAdoption": {
+      "sourceRepository": "wellmanifest/new-project",
+      "fromRevision": "f7fe7163e886d5540cedf83d383b6dd99daafd7c",
+      "toRevision": "5848c1efb3386765e221cde57090f8c221f3e857"
+    }
+  }
+}
