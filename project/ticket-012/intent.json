@@ -1,0 +1,116 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-012",
+  "summary": "Canonical repository-local hidden worktrees v5",
+  "workstream": "integration",
+  "classification": {
+    "kind": "FEATURE",
+    "priority": "P1",
+    "origin": "requested"
+  },
+  "allowedPaths": [
+    "project/ticket-012/**",
+    "project/TICKETS.md",
+    "VERSION",
+    "docs/STANDARD.md",
+    "docs/ARCHITECTURE.md",
+    "docs/information/worktree-layout.md",
+    "docs/README.md",
+    "models/worktrees.schema.json",
+    "operations/conformance.py",
+    "operations/conformance_test.py"
+  ],
+  "forbiddenPaths": [
+    "project/ticket-*/user-*.md"
+  ],
+  "stacks": [],
+  "dependsOn": [],
+  "conflictsWith": [],
+  "integrationTicket": null,
+  "placement": {
+    "home": "wellmanifest",
+    "shape": "domain_pack",
+    "runtimeOwner": "subactor",
+    "adopt": [
+      "wellmanifest/new-project"
+    ]
+  },
+  "delivery": {
+    "acceptedBaseSha": "46db8845637cef2388282b15fe6b17fc76c141d3",
+    "targetBranch": "main",
+    "outcome": "Publish worktrees 0.5.0 / v5: new delivery checkouts use <primary>/.worktrees/<ticket>--<slug>, retain relative links and repository-local leases, and classify undotted v4 as read-only legacy.",
+    "nonGoals": [
+      "No automatic relocation, repair or removal of existing worktrees",
+      "No new Git effect implementation in the domain pack"
+    ],
+    "complexity": "L",
+    "estimatedMinutes": 120,
+    "budgets": {
+      "maxImplementationFiles": 10,
+      "maxAffectedComponents": 4,
+      "maxPublicInterfaceChanges": 3,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Change the allocation directory in a new contract version; preserve v4 as an explicit legacy inventory class. User request authorizes bootstrapping this ticket directly in the target .worktrees layout despite the adopted older instructions.",
+      "components": [
+        {
+          "name": "normative-contract",
+          "paths": [
+            "docs/**",
+            "VERSION"
+          ]
+        },
+        {
+          "name": "layout-schema",
+          "paths": [
+            "models/worktrees.schema.json"
+          ]
+        },
+        {
+          "name": "planner-and-inventory",
+          "paths": [
+            "operations/conformance.py"
+          ]
+        },
+        {
+          "name": "conformance-tests",
+          "paths": [
+            "operations/conformance_test.py"
+          ]
+        }
+      ],
+      "responsibilityChanges": false,
+      "interfaceChanges": [
+        "wellmanifest.worktrees/v5 records and canonical-v5 / legacy-v4 inventory classifications"
+      ],
+      "dataChanges": [
+        "New allocations use <primary>/.worktrees/<ticket>--<slug>; existing v4 paths remain observable and preserved."
+      ],
+      "ui": {
+        "impact": "none",
+        "states": [],
+        "evidence": []
+      },
+      "rollback": "Revert before runtime adoption; inventory never mutates legacy paths, and existing worktrees remain preserved for an explicitly authorized migration."
+    },
+    "runtimeDependencies": [],
+    "validation": [
+      {
+        "criterion": "AC-01",
+        "commands": [
+          "python3 operations/conformance_test.py"
+        ],
+        "evidence": "Pending: POSIX/Windows allocation, v4 legacy classification, relative relocation, symlink rejection."
+      },
+      {
+        "criterion": "AC-02",
+        "commands": [
+          "./project/governance-check.sh --actor agent"
+        ],
+        "evidence": "Pending governed scope validation."
+      }
+    ]
+  }
+}

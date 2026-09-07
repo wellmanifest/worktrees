@@ -51,7 +51,7 @@ class WorktreeConformanceTest(unittest.TestCase):
         self.assertEqual(record["branch"], "ticket/127-worktrees-standard")
         self.assertEqual(
             record["worktreePath"],
-            "/home/tom/github/wellmanifest/new-project/worktrees/ticket-127--worktrees-standard",
+            "/home/tom/github/wellmanifest/new-project/.worktrees/ticket-127--worktrees-standard",
         )
         self.assertEqual(
             record["leasePath"],
@@ -73,7 +73,7 @@ class WorktreeConformanceTest(unittest.TestCase):
         )
         self.assertEqual(
             record["worktreePath"],
-            "C:\\github\\wellmanifest\\new-project\\worktrees\\ticket-127--worktrees-standard",
+            "C:\\github\\wellmanifest\\new-project\\.worktrees\\ticket-127--worktrees-standard",
         )
         self.assertEqual(
             record["leasePath"],
@@ -115,7 +115,7 @@ class WorktreeConformanceTest(unittest.TestCase):
             primary.mkdir()
             redirected = primary / "redirected"
             redirected.mkdir()
-            (primary / "worktrees").symlink_to(redirected)
+            (primary / ".worktrees").symlink_to(redirected)
             record = plan(
                 repository="wellmanifest/new-project",
                 repository_name="new-project",
@@ -124,7 +124,7 @@ class WorktreeConformanceTest(unittest.TestCase):
                 primary_checkout=str(primary),
             )
             self.assertIn(
-                "symlink_component:worktreesRoot:worktrees",
+                "symlink_component:worktreesRoot:.worktrees",
                 validate_filesystem(record),
             )
 
@@ -132,6 +132,11 @@ class WorktreeConformanceTest(unittest.TestCase):
         primary = "/workspace/wellmanifest/new-project"
         registered = [
             {"path": primary, "head": "a" * 40, "branch": "refs/heads/main"},
+            {
+                "path": f"{primary}/.worktrees/ticket-127--worktrees-standard",
+                "head": "b" * 40,
+                "branch": "refs/heads/ticket/127-worktrees-standard",
+            },
             {
                 "path": f"{primary}/worktrees/ticket-127--worktrees-standard",
                 "head": "b" * 40,
@@ -182,7 +187,8 @@ class WorktreeConformanceTest(unittest.TestCase):
             [entry["classification"] for entry in record["entries"]],
             [
                 "primary",
-                "canonical-v4",
+                "canonical-v5",
+                "legacy-v4",
                 "legacy-v3",
                 "legacy-v2",
                 "legacy-v1",
@@ -191,12 +197,31 @@ class WorktreeConformanceTest(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            record["summary"]["anomalies"], {"duplicate-delivery": 2}
+            record["summary"]["anomalies"], {"duplicate-delivery": 3}
         )
         self.assertIn("duplicate-delivery", record["entries"][1]["anomalies"])
         self.assertIn("duplicate-delivery", record["entries"][2]["anomalies"])
         self.assertTrue(record["readOnly"])
         self.assertEqual(validate(record), [])
+
+    def test_v4_layout_is_observed_but_rejected_for_new_allocation(self):
+        for style, primary in (("posix", "/workspace/repo"), ("windows", "C:/workspace/repo")):
+            with self.subTest(style=style):
+                record = plan(repository="org/repo", repository_name="repo",
+                              ticket="ticket-012", slug="hidden-worktrees",
+                              primary_checkout=primary, path_style=style)
+                self.assertEqual(record["schema"], "wellmanifest.worktrees/v5")
+                record["schema"] = "wellmanifest.worktrees/v4"
+                record["worktreesRoot"] = record["worktreesRoot"].replace(".worktrees", "worktrees")
+                record["worktreePath"] = record["worktreePath"].replace(".worktrees", "worktrees")
+                self.assertIn("noncanonical:schema", validate(record))
+                self.assertIn("noncanonical:worktreePath", validate(record))
+                observed = inventory(repository="org/repo", repository_name="repo",
+                                     primary_checkout=primary, path_style=style,
+                                     registered=[{"path": record["worktreePath"]}])
+                self.assertEqual(observed["entries"][0]["classification"], "legacy-v4")
+                self.assertTrue(observed["readOnly"])
+                self.assertEqual(validate(observed), [])
 
     def test_feature_probe_reports_version_and_both_flags(self):
         result = feature_probe()
@@ -248,7 +273,7 @@ class WorktreeConformanceTest(unittest.TestCase):
             git("add", "tracked.txt", cwd=primary)
             git("commit", "-m", "fixture", cwd=primary)
 
-            linked = primary / "worktrees" / "ticket-130--rename-repair"
+            linked = primary / ".worktrees" / "ticket-130--rename-repair"
             git(
                 "-c",
                 "worktree.useRelativePaths=false",
@@ -265,7 +290,7 @@ class WorktreeConformanceTest(unittest.TestCase):
 
             relocated = root / "project-after-rename"
             primary.rename(relocated)
-            relocated_linked = relocated / "worktrees" / linked.name
+            relocated_linked = relocated / ".worktrees" / linked.name
             before = git("-C", str(relocated_linked), "status", check=False)
             self.assertNotEqual(before.returncode, 0)
 
