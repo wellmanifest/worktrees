@@ -3,23 +3,22 @@
   "schema": "wellmanifest.docs/document/v1",
   "id": "worktree-layout",
   "kind": "information",
-  "version": 1,
+  "version": 2,
   "title": "Repository-local hidden worktree layout v5",
   "status": "proposed",
   "owner": "wellmanifest/worktrees",
   "created": "2026-09-07",
   "updated": "2026-09-07",
   "review_after": "2026-10-07",
-  "source_revision": "46db8845637cef2388282b15fe6b17fc76c141d3",
+  "source_revision": "87d17708895ffad603c5d71cb2b8ef02ab100279",
   "affected_repositories": [
-    "wellmanifest/worktrees",
-    "wellmanifest/new-project",
-    "wellmanifest/git-lifecycle"
+    "wellmanifest/worktrees"
   ],
   "evidence": [
     "repo://wellmanifest/worktrees/operations/conformance.py",
     "repo://wellmanifest/worktrees/operations/conformance_test.py",
-    "repo://wellmanifest/worktrees/models/worktrees.schema.json"
+    "repo://wellmanifest/worktrees/models/worktrees.schema.json",
+    "https://github.com/wellmanifest/new-project/pull/300"
   ]
 }
 ---
