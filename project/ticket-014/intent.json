@@ -1,0 +1,90 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-014",
+  "summary": "Bind Git feature probes to an explicit repository context",
+  "workstream": "integration",
+  "classification": {
+    "kind": "BUG",
+    "priority": "P2",
+    "origin": "requested"
+  },
+  "allowedPaths": [
+    "project/ticket-014/**",
+    "operations/conformance.py",
+    "operations/conformance_test.py",
+    "VERSION",
+    "docs/information/worktree-layout.md"
+  ],
+  "forbiddenPaths": [
+    "project/ticket-*/user-*.md"
+  ],
+  "stacks": [],
+  "dependsOn": [],
+  "conflictsWith": [],
+  "integrationTicket": null,
+  "delivery": {
+    "acceptedBaseSha": "b86559f7f5bc27eca0fcc6af54de0d9297d18e6b",
+    "targetBranch": "main",
+    "outcome": "Publish Worktrees 0.5.1 with explicit repository context and distinct context failure diagnostics.",
+    "nonGoals": [
+      "No automatic relocation, repair or removal of existing worktrees",
+      "No new Git effect implementation in the domain pack"
+    ],
+    "complexity": "M",
+    "estimatedMinutes": 60,
+    "budgets": {
+      "maxImplementationFiles": 4,
+      "maxAffectedComponents": 2,
+      "maxPublicInterfaceChanges": 1,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Probe in an explicit repository cwd without changing global cwd or creating directories; reject unavailable repository context distinctly from missing Git features, ignoring inherited repository selectors.",
+      "components": [
+        {
+          "name": "probe",
+          "paths": [
+            "operations/conformance.py",
+            "operations/conformance_test.py"
+          ]
+        },
+        {
+          "name": "standard",
+          "paths": [
+            "VERSION",
+            "docs/information/worktree-layout.md"
+          ]
+        }
+      ],
+      "responsibilityChanges": false,
+      "interfaceChanges": [
+        "Optional from_worktree argument and --from-worktree CLI; repositoryContextValid and probeError fields."
+      ],
+      "dataChanges": [],
+      "ui": {
+        "impact": "none",
+        "states": [],
+        "evidence": []
+      },
+      "rollback": "Revert before runtime adoption; inventory never mutates legacy paths, and existing worktrees remain preserved for an explicitly authorized migration."
+    },
+    "runtimeDependencies": [],
+    "validation": [
+      {
+        "criterion": "AC-01",
+        "commands": [
+          "python3 operations/conformance_test.py"
+        ],
+        "evidence": "15 conformance tests passed, including explicit context, inherited Git selectors, missing repair flag and old Git."
+      },
+      {
+        "criterion": "AC-02",
+        "commands": [
+          "./project/governance-check.sh --actor agent"
+        ],
+        "evidence": "Pending governed scope validation."
+      }
+    ]
+  }
+}
