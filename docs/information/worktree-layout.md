@@ -3,14 +3,14 @@
   "schema": "wellmanifest.docs/document/v1",
   "id": "worktree-layout",
   "kind": "information",
-  "version": 2,
+  "version": 3,
   "title": "Repository-local hidden worktree layout v5",
   "status": "proposed",
   "owner": "wellmanifest/worktrees",
   "created": "2026-09-07",
   "updated": "2026-09-07",
   "review_after": "2026-10-07",
-  "source_revision": "87d17708895ffad603c5d71cb2b8ef02ab100279",
+  "source_revision": "b86559f7f5bc27eca0fcc6af54de0d9297d18e6b",
   "affected_repositories": [
     "wellmanifest/worktrees"
   ],
@@ -25,7 +25,7 @@
 
 # Wellmanifest Worktrees Standard
 
-Version: 0.5.0
+Version: 0.5.1
 
 <!-- docs:section purpose -->
 ## Purpose
@@ -110,6 +110,13 @@ Version 5 requires Git 2.51.0 or newer and both of these supported options:
 git worktree add --relative-paths ...
 git worktree repair --relative-paths ...
 ```
+
+Run `feature-probe --from-worktree <repository>` when the host starts in an
+organization directory or another checkout. The probe ignores inherited
+`GIT_*` selectors and reports `repository_context_unavailable` separately from
+unsupported Git features. It never changes the process working directory or
+creates a repository. This prevents parallel hosts from probing each other's
+repository context. Existing callers default to their current directory.
 
 Checking only a version string is insufficient. The runtime MUST feature-probe
 the `add` and `repair` help surfaces before allocation. It MAY set repository

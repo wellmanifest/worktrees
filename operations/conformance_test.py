@@ -2,6 +2,7 @@ import os
 import subprocess
 import tempfile
 import unittest
+import json
 from pathlib import Path
 
 from conformance import (
@@ -238,6 +239,8 @@ class WorktreeConformanceTest(unittest.TestCase):
                 return subprocess.CompletedProcess(
                     args, 0, b"git version 2.50.2\n", b""
                 )
+            if "rev-parse" in args:
+                return subprocess.CompletedProcess(args, 0, b".git\n", b"")
             return subprocess.CompletedProcess(
                 args, 129, b"", b"usage: --[no-]relative-paths\n"
             )
@@ -247,6 +250,49 @@ class WorktreeConformanceTest(unittest.TestCase):
         self.assertTrue(result["worktreeAddRelativePaths"])
         self.assertTrue(result["worktreeRepairRelativePaths"])
         self.assertFalse(result["supported"])
+
+    def test_feature_probe_rejects_missing_repair_flag_in_valid_context(self):
+        def git_without_repair_flag(args, **_kwargs):
+            if args[-1] == "--version":
+                return subprocess.CompletedProcess(args, 0, b"git version 2.51.0\n", b"")
+            if "rev-parse" in args:
+                return subprocess.CompletedProcess(args, 0, b".git\n", b"")
+            help_text = b"usage: --relative-paths\n" if "add" in args else b"usage: repair\n"
+            return subprocess.CompletedProcess(args, 129, b"", help_text)
+
+        result = feature_probe(runner=git_without_repair_flag)
+        self.assertTrue(result["repositoryContextValid"])
+        self.assertIsNone(result["probeError"])
+        self.assertTrue(result["worktreeAddRelativePaths"])
+        self.assertFalse(result["worktreeRepairRelativePaths"])
+        self.assertFalse(result["supported"])
+
+    def test_probe_from_organization_directory_has_distinct_context_failure(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            before = list(Path(temporary).iterdir())
+            result = feature_probe(from_worktree=temporary)
+            self.assertFalse(result["supported"])
+            self.assertFalse(result["repositoryContextValid"])
+            self.assertEqual(result["probeError"], "repository_context_unavailable")
+            self.assertEqual(list(Path(temporary).iterdir()), before)
+
+    def test_cli_explicit_context_ignores_caller_and_inherited_git_selectors(self):
+        script = Path(__file__).with_name("conformance.py").resolve()
+        repository = str(script.parent.parent)
+        expected = feature_probe(from_worktree=repository)
+        with tempfile.TemporaryDirectory() as temporary:
+            sentinel = Path(temporary) / "sentinel"
+            sentinel.write_text("preserve me")
+            env = dict(os.environ, GIT_DIR=str(Path(temporary) / "missing"),
+                       GIT_WORK_TREE=temporary, GIT_COMMON_DIR=temporary)
+            result = subprocess.run(
+                ["python3", str(script), "feature-probe", "--from-worktree", repository],
+                cwd=temporary, env=env, capture_output=True, text=True,
+            )
+            self.assertEqual(json.loads(result.stdout), expected)
+            self.assertEqual(result.returncode, 0 if expected["supported"] else 1)
+            self.assertEqual(sentinel.read_text(), "preserve me")
+            self.assertEqual(list(Path(temporary).iterdir()), [sentinel])
 
     @unittest.skipIf(os.name == "nt", "POSIX relocation fixture")
     def test_repository_rename_requires_then_passes_exact_relative_repair(self):
