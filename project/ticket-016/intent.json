@@ -1,0 +1,95 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-016",
+  "summary": "Adopt published governance 0.20.13 in Worktrees owner",
+  "workstream": "integration",
+  "classification": {
+    "kind": "BUG",
+    "priority": "P2",
+    "origin": "requested"
+  },
+  "allowedPaths": [
+    "project/ticket-016/**",
+    ".githooks/pre-commit",
+    ".github/workflows/new-project-governance.yml",
+    ".governance/docs/LOCAL_CI_PUBLICATION.md",
+    ".governance/error/GOV-STANDARD-UPDATE.md",
+    ".governance/manifest.base.json",
+    ".governance/manifest.json",
+    ".governance/package-manifest.json",
+    ".governance/worktree_overlap_check.py",
+    ".governance/worktree_path_check.py",
+    ".governance/worktrees.lock.json",
+    "AGENTS.md",
+    "scripts/install-agent-hosts.sh",
+    ".governance/manifest.lock.json"
+  ],
+  "forbiddenPaths": [
+    "project/ticket-*/user-*.md"
+  ],
+  "stacks": [],
+  "dependsOn": [],
+  "conflictsWith": [],
+  "integrationTicket": null,
+  "delivery": {
+    "acceptedBaseSha": "81e0d750f18ecace4436706250bf5deb190a000a",
+    "targetBranch": "main",
+    "outcome": "Adopt the independently published new-project 0.20.13 so the owner uses current v5 checks and the local pin-only hook.",
+    "nonGoals": [
+      "No automatic relocation, repair or removal of existing worktrees",
+      "No new Git effect implementation in the domain pack"
+    ],
+    "complexity": "L",
+    "estimatedMinutes": 60,
+    "budgets": {
+      "maxImplementationFiles": 13,
+      "maxAffectedComponents": 1,
+      "maxPublicInterfaceChanges": 1,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Apply the exact published package through Goal and declare its exact cross-cutting paths as integration-owned before adoption. No standard source or product changes.",
+      "components": [
+        {
+          "name": "published-governance-adoption",
+          "paths": [
+            ".githooks/pre-commit",
+            ".github/workflows/new-project-governance.yml",
+            ".governance/docs/LOCAL_CI_PUBLICATION.md",
+            ".governance/error/GOV-STANDARD-UPDATE.md",
+            ".governance/manifest.base.json",
+            ".governance/manifest.json",
+            ".governance/package-manifest.json",
+            ".governance/worktree_overlap_check.py",
+            ".governance/worktree_path_check.py",
+            ".governance/worktrees.lock.json",
+            "AGENTS.md",
+            "scripts/install-agent-hosts.sh",
+            ".governance/manifest.lock.json"
+          ]
+        }
+      ],
+      "responsibilityChanges": true,
+      "interfaceChanges": [],
+      "dataChanges": [],
+      "ui": {
+        "impact": "none",
+        "states": [],
+        "evidence": []
+      },
+      "rollback": "Revert before runtime adoption; inventory never mutates legacy paths, and existing worktrees remain preserved for an explicitly authorized migration."
+    },
+    "runtimeDependencies": [],
+    "validation": [
+      {
+        "criterion": "AC-01",
+        "commands": [
+          "goal governance adopt --check",
+          "./project/governance-check.sh --actor agent"
+        ],
+        "evidence": "Pending exact pin and governed diff checks."
+      }
+    ]
+  }
+}
