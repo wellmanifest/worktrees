@@ -2,9 +2,9 @@
   "schema": "new-project.worktrees-lock/v1",
   "dependency": {
     "id": "wellmanifest/worktrees",
-    "version": "0.5.0",
+    "version": "0.5.1",
     "sourceRepository": "wellmanifest/worktrees",
-    "sourceRevision": "87d17708895ffad603c5d71cb2b8ef02ab100279"
+    "sourceRevision": "81e0d750f18ecace4436706250bf5deb190a000a"
   },
   "artifacts": [
     {
@@ -17,7 +17,7 @@
       "sourcePath": "operations/conformance.py",
       "packageSourcePath": "subprojects/worktrees/conformance.py",
       "managedTargetPath": ".governance/worktree_path_check.py",
-      "sourceSha256": "5e38dc9a4c953ba0fb2a4301a0917e609e0b00cebcb345a16962b13d1de02389"
+      "sourceSha256": "d3309b76e2c91dd7f046b00322ec8cb48ef744b8b7908d70e475fedf95e5e196"
     }
   ],
   "installation": {
