@@ -3,6 +3,7 @@ import subprocess
 import tempfile
 import unittest
 import json
+import re
 from pathlib import Path
 
 from conformance import (
@@ -30,16 +31,39 @@ class WorktreeConformanceTest(unittest.TestCase):
                     self.assertEqual(record["entries"][0]["classification"], "primary")
                     self.assertTrue(record["readOnly"])
                     self.assertEqual(validate(record), [])
-                    with self.assertRaises(ValueError):
-                        plan(repository=f"org/{name}", repository_name=name,
-                             ticket="ticket-011", slug="observed-names",
-                             primary_checkout=primary, path_style=style)
+                    layout = plan(repository=f"org/{name}", repository_name=name,
+                                  ticket="ticket-011", slug="observed-names",
+                                  primary_checkout=primary, path_style=style)
+                    self.assertEqual(layout["repositoryName"], name)
+                    self.assertEqual(layout["branch"], "ticket/011-observed-names")
+                    self.assertTrue(layout["worktreePath"].endswith(
+                        "ticket-011--observed-names"))
+                    self.assertEqual(validate(layout), [])
 
     def test_inventory_rejects_non_basename_repository_names(self):
         for name in ("", ".", "..", "org/repo", "org\\repo", "repo\0name", None):
             with self.subTest(name=name), self.assertRaises(ValueError):
                 inventory(repository="org/repo", repository_name=name,
                           primary_checkout="/workspace/repo", registered=[])
+
+    def test_planner_rejects_non_basename_repository_names(self):
+        for name in ("", ".", "..", "org/repo", "org\\repo", "repo\0name", None):
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                plan(repository="org/repo", repository_name=name,
+                     ticket="ticket-011", slug="valid-slug",
+                     primary_checkout="/workspace/repo")
+
+    def test_repository_basename_schema_matches_planner(self):
+        schema = json.loads((Path(__file__).parents[1] /
+                             "models/worktrees.schema.json").read_text())
+        definition = schema["$defs"]["repositoryName"]
+        if "$ref" in definition:
+            definition = schema["$defs"][definition["$ref"].rsplit("/", 1)[1]]
+        pattern = definition["pattern"]
+        for name in (".github", "Repo_Name.v2", "my repo", "repo--legacy", "u0000"):
+            self.assertIsNotNone(re.fullmatch(pattern, name))
+        for name in ("org/repo", "org\\repo", "repo\0name"):
+            self.assertIsNone(re.fullmatch(pattern, name))
 
     def test_posix_layout(self):
         record = plan(

@@ -1,0 +1,94 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-015",
+  "summary": "Preserve repository basenames in canonical v5 allocation",
+  "workstream": "integration",
+  "classification": {
+    "kind": "BUG",
+    "priority": "P2",
+    "origin": "requested"
+  },
+  "allowedPaths": [
+    "project/ticket-015/**",
+    "operations/conformance.py",
+    "operations/conformance_test.py",
+    "models/worktrees.schema.json",
+    "VERSION",
+    "docs/information/worktree-layout.md"
+  ],
+  "forbiddenPaths": [
+    "project/ticket-*/user-*.md"
+  ],
+  "stacks": [],
+  "dependsOn": [
+    "ticket-016"
+  ],
+  "conflictsWith": [],
+  "integrationTicket": null,
+  "delivery": {
+    "acceptedBaseSha": "67799453bbea8a23d80b5c507ecce5105cfae29f",
+    "targetBranch": "main",
+    "outcome": "Publish Worktrees 0.5.2 preserving valid repository basenames and documenting host adoption boundaries.",
+    "nonGoals": [
+      "No automatic relocation, repair or removal of existing worktrees",
+      "No new Git effect implementation in the domain pack"
+    ],
+    "complexity": "M",
+    "estimatedMinutes": 60,
+    "budgets": {
+      "maxImplementationFiles": 5,
+      "maxAffectedComponents": 2,
+      "maxPublicInterfaceChanges": 1,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Preserve repository basename metadata while retaining strict canonical ticket and slug paths. Published package adoption is a separate prerequisite ticket.",
+      "components": [
+        {
+          "name": "worktree-layout",
+          "paths": [
+            "operations/conformance.py",
+            "operations/conformance_test.py",
+            "models/worktrees.schema.json"
+          ]
+        },
+        {
+          "name": "standard-docs",
+          "paths": [
+            "VERSION",
+            "docs/information/worktree-layout.md"
+          ]
+        }
+      ],
+      "responsibilityChanges": false,
+      "interfaceChanges": [
+        "Planner repositoryName accepts the same observed basenames as inventory."
+      ],
+      "dataChanges": [],
+      "ui": {
+        "impact": "none",
+        "states": [],
+        "evidence": []
+      },
+      "rollback": "Revert before runtime adoption; inventory never mutates legacy paths, and existing worktrees remain preserved for an explicitly authorized migration."
+    },
+    "runtimeDependencies": [],
+    "validation": [
+      {
+        "criterion": "AC-01",
+        "commands": [
+          "python3 operations/conformance_test.py"
+        ],
+        "evidence": "Pending basename regression and full conformance suite."
+      },
+      {
+        "criterion": "AC-02",
+        "commands": [
+          "./project/governance-check.sh --actor agent"
+        ],
+        "evidence": "Pending governed scope validation."
+      }
+    ]
+  }
+}

@@ -3,14 +3,14 @@
   "schema": "wellmanifest.docs/document/v1",
   "id": "worktree-layout",
   "kind": "information",
-  "version": 3,
+  "version": 4,
   "title": "Repository-local hidden worktree layout v5",
   "status": "proposed",
   "owner": "wellmanifest/worktrees",
   "created": "2026-09-07",
-  "updated": "2026-09-07",
+  "updated": "2026-09-08",
   "review_after": "2026-10-07",
-  "source_revision": "b86559f7f5bc27eca0fcc6af54de0d9297d18e6b",
+  "source_revision": "67799453bbea8a23d80b5c507ecce5105cfae29f",
   "affected_repositories": [
     "wellmanifest/worktrees"
   ],
@@ -25,7 +25,7 @@
 
 # Wellmanifest Worktrees Standard
 
-Version: 0.5.1
+Version: 0.5.2
 
 <!-- docs:section purpose -->
 ## Purpose
@@ -94,9 +94,11 @@ are runtime data, not repository artifacts.
 6. One delivery unit maps to one ticket, branch, worktree and lease. A branch
    pattern, path glob or non-expired lease for another path grants no write
    authority.
-7. The repository name and slug contain lowercase ASCII letters, digits and
-   single hyphen-separated words. A ticket matches `ticket-NNN` with at least
-   three digits.
+7. The slug contains lowercase ASCII letters, digits and single hyphen-separated
+   words. A ticket matches `ticket-NNN` with at least three digits. The repository
+   name preserves its actual basename, including `.github`, mixed case, dots,
+   underscores and spaces; empty names, `.`/`..`, separators and NUL are rejected.
+   It is identity metadata and does not replace or normalize the primary path.
 8. The primary checkout and ticket worktrees MUST remain siblings in Git's
    worktree registry even though their filesystem paths are nested. A runtime
    MUST NOT recursively treat the nested worktree as primary-repository
@@ -145,9 +147,9 @@ This rule prevents an allocator invoked from
 Inventory consumes Git's registered worktree records and returns
 `kind=inventory-record`, `readOnly=true`. Its repository name is an observed
 basename, preserved exactly, including `.github`, mixed case, underscores and
-spaces. Inventory rejects empty names, `.`/`..`, path separators and NUL. The
-normalized repository-name and slug rules above apply to allocation only;
-observing an existing checkout does not authorize creating one.
+spaces. Inventory rejects empty names, `.`/`..`, path separators and NUL. The same
+basename validation applies to layout planning. Ticket and slug normalization
+remain mandatory; observing an existing checkout does not authorize creating one.
 
 Path classification is deterministic:
 
@@ -213,6 +215,32 @@ Only a `delivery` workspace is writable under this layout:
 
 A runtime MUST NOT relabel a deployment checkout, validator snapshot, cache,
 service directory or duplicate clone as `delivery` to exempt it from audit.
+
+## Host-wide adoption and runtime evidence
+
+A workspace host may install a pinned ancestor instruction for all descendant
+repositories, select this published planner for new allocations, enable
+`worktree.useRelativePaths=true` in each observed common Git repository and
+root-ignore `/.worktrees/` through tracked rules or local `info/exclude`.
+Host changes are adopter effects and require exact targets, preserved prior
+values and readback. Deduplicate linked checkouts by their registered primary;
+never apply a second configuration to the same repository through another path.
+A local exclusion must not hide `.subactor/manifest.json` or remove custom rules.
+
+These host defaults are distinct from a tracked package lock, an allocator's
+runtime integration and protected CI enforcement. An old managed adopter must
+upgrade through its published adoption mechanism before claiming conformance;
+a host instruction cannot waive its checker or manufacture a compatible lock.
+Existing custom allocators require their own verification. A successful audit
+of path shape alone is not proof of lease ownership or permission to mutate it.
+
+The directory name is `ticket-NNN--description`, while the Git branch is
+`ticket/NNN-description`; the slash in a ref is not an extra directory level.
+For example, `.subactor/receipts/.../protected-tests.log` is runtime evidence,
+not a delivery worktree. Reading that log from a primary checkout does not
+relocate the branch being tested. `git worktree list --porcelain -z` establishes
+the actual registered locations. Do not move receipts into `.worktrees` merely
+to make a displayed command resemble a branch path.
 
 ## Responsibility boundaries
 
