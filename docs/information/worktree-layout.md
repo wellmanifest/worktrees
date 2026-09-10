@@ -3,14 +3,14 @@
   "schema": "wellmanifest.docs/document/v1",
   "id": "worktree-layout",
   "kind": "information",
-  "version": 4,
+  "version": 5,
   "title": "Repository-local hidden worktree layout v5",
   "status": "proposed",
   "owner": "wellmanifest/worktrees",
   "created": "2026-09-07",
-  "updated": "2026-09-08",
+  "updated": "2026-09-10",
   "review_after": "2026-10-07",
-  "source_revision": "67799453bbea8a23d80b5c507ecce5105cfae29f",
+  "source_revision": "44f1686dd041554649720e171d690944afa49586",
   "affected_repositories": [
     "wellmanifest/worktrees"
   ],
@@ -25,7 +25,7 @@
 
 # Wellmanifest Worktrees Standard
 
-Version: 0.5.2
+Version: 0.5.3
 
 <!-- docs:section purpose -->
 ## Purpose
