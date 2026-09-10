@@ -1,0 +1,87 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-017",
+  "summary": "Reduce inventory validator complexity without changing classifications",
+  "workstream": "integration",
+  "classification": {
+    "kind": "BUG",
+    "priority": "P2",
+    "origin": "requested"
+  },
+  "allowedPaths": [
+    "project/ticket-017/**",
+    "operations/conformance.py",
+    "VERSION",
+    "docs/information/worktree-layout.md"
+  ],
+  "forbiddenPaths": [
+    "project/ticket-*/user-*.md"
+  ],
+  "stacks": [],
+  "dependsOn": [],
+  "conflictsWith": [],
+  "integrationTicket": null,
+  "delivery": {
+    "acceptedBaseSha": "44f1686dd041554649720e171d690944afa49586",
+    "targetBranch": "main",
+    "outcome": "Publish Worktrees 0.5.3 with classification and duplicate detection below unchanged complexity limits.",
+    "nonGoals": [
+      "No automatic relocation, repair or removal of existing worktrees",
+      "No new Git effect implementation in the domain pack"
+    ],
+    "complexity": "S",
+    "estimatedMinutes": 30,
+    "budgets": {
+      "maxImplementationFiles": 5,
+      "maxAffectedComponents": 2,
+      "maxPublicInterfaceChanges": 1,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Extract classification and anomaly stages with identical branch order and read-only outputs.",
+      "components": [
+        {
+          "name": "worktree-layout",
+          "paths": [
+            "operations/conformance.py"
+          ]
+        },
+        {
+          "name": "standard-docs",
+          "paths": [
+            "VERSION",
+            "docs/information/worktree-layout.md"
+          ]
+        }
+      ],
+      "responsibilityChanges": false,
+      "interfaceChanges": [],
+      "dataChanges": [],
+      "ui": {
+        "impact": "none",
+        "states": [],
+        "evidence": []
+      },
+      "rollback": "Revert before runtime adoption; inventory never mutates legacy paths, and existing worktrees remain preserved for an explicitly authorized migration."
+    },
+    "runtimeDependencies": [],
+    "validation": [
+      {
+        "criterion": "AC-01",
+        "commands": [
+          "python3 operations/conformance_test.py",
+          "lizard -C 15 -L 100 -w operations/conformance.py"
+        ],
+        "evidence": "Existing POSIX, Windows and duplicate-registration fixtures."
+      },
+      {
+        "criterion": "AC-02",
+        "commands": [
+          "./project/governance-check.sh --actor agent"
+        ],
+        "evidence": "Pending governed scope validation."
+      }
+    ]
+  }
+}
