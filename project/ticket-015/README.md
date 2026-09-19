@@ -1,7 +1,7 @@
 # Ticket 015: Repository basenames and workspace adoption
 
-- **Status**: IN_PROGRESS
-- **Workflow state**: PUBLICATION
+- **Status**: DONE
+- **Workflow state**: DONE
 
 SESSION_EXECUTION_AUTHORIZATION: user requests Worktrees adoption across ~/github/*/* and correction of the owning standard where needed.
 

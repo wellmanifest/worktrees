@@ -1,7 +1,7 @@
 # Ticket 016: Published governance adoption
 
-- **Status**: IN_PROGRESS
-- **Workflow state**: PUBLICATION
+- **Status**: DONE
+- **Workflow state**: DONE
 
 SESSION_EXECUTION_AUTHORIZATION: user requests fleet Worktrees adoption and required standard corrections. The old hook requires an update before the basename fix can be published; this independent dependency stays within the delivery file budget.
 
