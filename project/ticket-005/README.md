@@ -2,8 +2,8 @@
 
 - **ID**: ticket-005
 - **Owner**: unresolved:human
-- **Status**: IN_PROGRESS
-- **Workflow state**: EDIT
+- **Status**: DONE
+- **Workflow state**: DONE
 - **Created**: 2026-09-01
 
 ## Goal and scope
@@ -15,10 +15,10 @@ ships the canonical worktree layout checker projection.
 
 ## Acceptance criteria
 
-- [ ] AC-01: Goal reports an immutable, published 0.19.18 adoption with no
+- [x] AC-01: Goal reports an immutable, published 0.19.18 adoption with no
       managed-file drift.
-- [ ] AC-02: The deterministic governance gate accepts the atomic adoption.
-- [ ] AC-03: Required-check projection and repository tests remain green.
+- [x] AC-02: The deterministic governance gate accepts the atomic adoption.
+- [x] AC-03: Required-check projection and repository tests remain green.
 
 ## Authorization and non-goals
 
