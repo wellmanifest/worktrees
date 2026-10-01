@@ -1,0 +1,74 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-019",
+  "summary": "Allocator result contract: no glob-derived targets, stop on refusal, no hand-moved scaffolds",
+  "workstream": "integration",
+  "classification": {
+    "kind": "SERVICE",
+    "priority": "P1",
+    "origin": "regression"
+  },
+  "allowedPaths": [
+    "project/ticket-019/**",
+    "TODO.md",
+    "project/TICKETS.md",
+    "docs/information/worktree-layout.md"
+  ],
+  "forbiddenPaths": [
+    "project/ticket-*/user-*.md"
+  ],
+  "stacks": [],
+  "dependsOn": [],
+  "conflictsWith": [],
+  "integrationTicket": null,
+  "delivery": {
+    "acceptedBaseSha": "d8e91cfe1fa923bf825fa7a4aa0da1c6e84a2a93",
+    "targetBranch": "main",
+    "outcome": "Worktrees v6 normative rules 9-13: allocator result contract, identity only from that result, stop on refusal, destructive effects only on attempt-created paths, no hand-moved legacy scaffolds.",
+    "nonGoals": [
+      "No allocator or conformance code changes (AC-02/AC-03 are follow-ups)",
+      "No automatic relocation, repair or removal of existing worktrees"
+    ],
+    "complexity": "S",
+    "estimatedMinutes": 30,
+    "budgets": {
+      "maxImplementationFiles": 1,
+      "maxAffectedComponents": 1,
+      "maxPublicInterfaceChanges": 1,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Add normative agent and allocator obligations to the layout standard only; enforcement in new-project allocator and conformance follows in separate tickets.",
+      "components": [
+        {
+          "name": "standard-docs",
+          "paths": [
+            "docs/information/worktree-layout.md"
+          ]
+        }
+      ],
+      "responsibilityChanges": false,
+      "interfaceChanges": [
+        "Allocators must return a machine-readable result and non-zero exit on refusal (rule 9)."
+      ],
+      "dataChanges": [],
+      "ui": {
+        "impact": "none",
+        "states": [],
+        "evidence": []
+      },
+      "rollback": "Revert the documentation commit; no runtime or repository state depends on it."
+    },
+    "runtimeDependencies": [],
+    "validation": [
+      {
+        "criterion": "AC-01",
+        "commands": [
+          "./project/governance-check.sh --actor agent --base origin/main"
+        ],
+        "evidence": "Governed scope validation of the documentation-only diff."
+      }
+    ]
+  }
+}

@@ -3,12 +3,12 @@
   "schema": "wellmanifest.docs/document/v1",
   "id": "worktree-layout",
   "kind": "information",
-  "version": 5,
+  "version": 6,
   "title": "Repository-local hidden worktree layout v5",
   "status": "proposed",
   "owner": "wellmanifest/worktrees",
   "created": "2026-09-07",
-  "updated": "2026-09-10",
+  "updated": "2026-10-01",
   "review_after": "2026-10-07",
   "source_revision": "44f1686dd041554649720e171d690944afa49586",
   "affected_repositories": [
@@ -103,6 +103,33 @@ are runtime data, not repository artifacts.
    worktree registry even though their filesystem paths are nested. A runtime
    MUST NOT recursively treat the nested worktree as primary-repository
    content.
+
+## Allocation result and agent obligations
+
+These rules close a gap observed on 2026-10-01. A pre-0.20.4x allocator
+scaffolded `project/ticket-NNN` in the primary checkout without a worktree.
+After an allocation was refused, an agent took "the newest ticket directory"
+as its own and deleted an existing, tracked ticket from the primary checkout.
+
+9. An allocator MUST signal refusal with a non-zero exit status, and success
+   with exit status 0 plus a machine-readable result naming the ticket,
+   branch, worktree path and lease path. Human prose alone is not a result.
+10. An agent MUST take the ticket, branch and paths only from that result.
+    A directory listing, glob, "newest" ordering, branch pattern or remembered
+    number grants no identity and no write authority (see rule 6).
+11. After a refusal or a non-zero exit, the attempt ends: no later Git or
+    filesystem effect of that attempt may run. Chained commands MUST stop on
+    the first failure.
+12. A destructive effect (`rm`, `git checkout --`, `git reset`, `git worktree
+    remove`, branch deletion) on a ticket carrier, worktree or lease MUST
+    target only paths that the current attempt's result names and that the
+    attempt itself created; verify both immediately before the effect.
+13. If an adopter's allocator cannot create the canonical worktree and lease,
+    an agent MUST NOT hand-move the scaffold or hand-write a lease as if it
+    were canonical. It requests an adoption upgrade or, with an explicit owner
+    decision, uses the planner's layout record and lease for that exact
+    ticket. Conformance tooling SHOULD report such adopters by standard
+    version.
 
 ## Relative Git linkage and feature gate
 
