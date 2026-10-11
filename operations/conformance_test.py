@@ -393,6 +393,28 @@ class WorktreeConformanceTest(unittest.TestCase):
             self.assertNotIn(str(primary), link_file)
             self.assertTrue(link_file.startswith("gitdir: ../../.git/worktrees/"))
 
+    def test_inventory_detects_stale_and_merged_anomalies(self):
+        primary = "/workspace/repo"
+        wt_normal = "/workspace/repo/.worktrees/ticket-101--active-work"
+        wt_stale = "/workspace/repo/.worktrees/ticket-102--missing-dir"
+        wt_merged = "/workspace/repo/.worktrees/ticket-103--merged-work"
+        record = inventory(
+            repository="org/repo",
+            repository_name="repo",
+            primary_checkout=primary,
+            registered=[
+                {"path": primary, "branch": "main"},
+                {"path": wt_normal, "branch": "ticket/101-active-work"},
+                {"path": wt_stale, "branch": "ticket/102-missing-dir", "stale": True},
+                {"path": wt_merged, "branch": "ticket/103-merged-work", "merged": True},
+            ],
+        )
+        self.assertEqual(record["entries"][1]["anomalies"], [])
+        self.assertEqual(record["entries"][2]["anomalies"], ["stale-registration"])
+        self.assertEqual(record["entries"][3]["anomalies"], ["merged-leftover"])
+        self.assertEqual(record["summary"]["anomalies"], {"merged-leftover": 1, "stale-registration": 1})
+        self.assertEqual(validate(record), [])
+
 
 if __name__ == "__main__":
     unittest.main()

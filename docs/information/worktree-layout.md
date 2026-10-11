@@ -192,8 +192,14 @@ Path classification is deterministic:
 | `unknown` | every other registered location |
 
 An entry also carries its observed HEAD, branch, detached/locked/prunable state
-and any anomaly. `duplicate-delivery` is attached to every non-primary entry
-when more than one registration has the same normalized ticket/slug or branch.
+and any anomaly. Recognized anomalies include:
+
+| Anomaly | Condition |
+| --- | --- |
+| `duplicate-delivery` | more than one registration has the same normalized ticket/slug or branch |
+| `stale-registration` | registered in Git metadata but directory is missing on disk (`git worktree prune` candidate) |
+| `merged-leftover` | non-primary worktree whose HEAD is already merged into primary `main` with no uncommitted changes |
+
 An anomaly does not erase the path's layout classification.
 
 The inventory is deliberately limited to registered worktrees. Finding an

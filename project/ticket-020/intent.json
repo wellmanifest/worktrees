@@ -1,0 +1,80 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-020",
+  "summary": "add-stale-registration-and-merged-leftover-anomalies",
+  "workstream": "integration",
+  "classification": {
+    "kind": "SERVICE",
+    "priority": "P2",
+    "origin": "health"
+  },
+  "allowedPaths": [
+    "project/ticket-020/**",
+    "TODO.md",
+    "project/TICKETS.md",
+    "docs/information/worktree-layout.md",
+    "models/worktrees.schema.json",
+    "operations/conformance.py",
+    "operations/conformance_test.py"
+  ],
+  "forbiddenPaths": [
+    "project/ticket-*/user-*.md"
+  ],
+  "delivery": {
+    "acceptedBaseSha": "529735ec7c0e656e861c6085b7e458660a6a32dc",
+    "targetBranch": "main",
+    "outcome": "Standardize stale-registration and merged-leftover anomalies across worktrees schema, conformance logic, and documentation.",
+    "nonGoals": [
+      "Do not perform automatic deletion or pruning in this domain pack."
+    ],
+    "complexity": "S",
+    "estimatedMinutes": 20,
+    "budgets": {
+      "maxImplementationFiles": 5,
+      "maxAffectedComponents": 2,
+      "maxPublicInterfaceChanges": 1,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Add stale-registration and merged-leftover to inventoryEntry.anomalies enum, recognize them in inventory and validate_inventory in conformance.py, test in conformance_test.py, and document in worktree-layout.md.",
+      "components": [
+        {
+          "name": "worktrees-conformance",
+          "paths": [
+            "models/worktrees.schema.json",
+            "operations/conformance.py",
+            "operations/conformance_test.py",
+            "docs/information/worktree-layout.md"
+          ]
+        }
+      ],
+      "responsibilityChanges": false,
+      "interfaceChanges": [
+        "Inventory anomaly values expand to include stale-registration and merged-leftover."
+      ],
+      "dataChanges": [],
+      "ui": {
+        "impact": "none",
+        "states": [],
+        "evidence": []
+      },
+      "rollback": "Revert the commit via git."
+    },
+    "runtimeDependencies": [],
+    "validation": [
+      {
+        "criterion": "AC-01",
+        "commands": [
+          "python3 operations/conformance_test.py",
+          "./project/governance-check.sh"
+        ],
+        "evidence": "Conformance tests pass and governance check reports 0 errors 0 warnings."
+      }
+    ]
+  },
+  "stacks": [],
+  "dependsOn": [],
+  "conflictsWith": [],
+  "integrationTicket": null
+}

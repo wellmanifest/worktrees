@@ -2,7 +2,7 @@
 
 - **ID**: ticket-014
 - **Owner**: codex
-- **Status**: IN_PROGRESS
+- **Status**: DONE
 - **Workflow state**: PUBLICATION
 
 SESSION_EXECUTION_AUTHORIZATION: user requests publication, current Wellmanifest adoption and fixes for confusion during parallel agent work.
