@@ -1,0 +1,82 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-022",
+  "summary": "Pass explicit cwd keyword to _git_output in worktrees conformance",
+  "workstream": "integration",
+  "classification": {
+    "kind": "SERVICE",
+    "priority": "P2",
+    "origin": "health"
+  },
+  "allowedPaths": [
+    "project/ticket-022/**",
+    "TODO.md",
+    "project/TICKETS.md",
+    "operations/conformance.py",
+    ".governance/standard-adoption.json"
+  ],
+  "forbiddenPaths": [
+    "project/ticket-*/user-*.md"
+  ],
+  "stacks": [
+    "python"
+  ],
+  "dependsOn": [],
+  "conflictsWith": [],
+  "integrationTicket": null,
+  "delivery": {
+    "acceptedBaseSha": "82068ed3f82743af4f82625fa4408cba42f97875",
+    "targetBranch": "main",
+    "outcome": "Pass explicit cwd keyword to _git_output in worktrees conformance and align standard adoption pack evidence with zero findings.",
+    "nonGoals": [
+      "No unrelated runtime or public contract changes"
+    ],
+    "complexity": "S",
+    "estimatedMinutes": 25,
+    "budgets": {
+      "maxImplementationFiles": 5,
+      "maxAffectedComponents": 2,
+      "maxPublicInterfaceChanges": 1,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Extract loop helpers, wire optional parameters, and align standard-adoption pack evidence without altering external behavior.",
+      "components": [
+        {
+          "name": "performance-remediation",
+          "paths": [
+            "operations/conformance.py"
+          ]
+        }
+      ],
+      "responsibilityChanges": false,
+      "interfaceChanges": [],
+      "dataChanges": [],
+      "ui": {
+        "impact": "none",
+        "states": [],
+        "evidence": []
+      },
+      "rollback": "Revert the ticket branch commit or close the pull request before merge."
+    },
+    "validation": [
+      {
+        "criterion": "AC-01",
+        "commands": [
+          "python3 .governance/standard_pack_check.py --root .",
+          "./project/governance-check.sh"
+        ],
+        "evidence": "project/ticket-022/README.md"
+      },
+      {
+        "criterion": "AC-02",
+        "commands": [
+          "pytest -q"
+        ],
+        "evidence": "project/ticket-022/README.md"
+      }
+    ],
+    "runtimeDependencies": []
+  }
+}
