@@ -569,6 +569,7 @@ def main() -> int:
             repository_name=args.repository_name,
             primary_checkout=primary,
             registered=registered_worktrees(args.from_worktree),
+            path_style="windows" if os.name == "nt" else "posix",
         )
         print(json.dumps(record, indent=2))
         return 0
