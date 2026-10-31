@@ -1,0 +1,90 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-023",
+  "summary": "Select native path style for worktree inventory CLI",
+  "workstream": "integration",
+  "classification": {
+    "kind": "BUG",
+    "priority": "P2",
+    "origin": "regression"
+  },
+  "allowedPaths": [
+    "project/ticket-023/**",
+    "TODO.md",
+    "project/TICKETS.md",
+    "VERSION",
+    "operations/conformance.py",
+    "operations/conformance_test.py"
+  ],
+  "forbiddenPaths": [
+    "project/ticket-*/user-*.md"
+  ],
+  "stacks": [],
+  "dependsOn": [],
+  "conflictsWith": [],
+  "integrationTicket": null,
+  "delivery": {
+    "acceptedBaseSha": "f7df84dccca6991c78d6b94c3ee4b7dc80372739",
+    "targetBranch": "main",
+    "outcome": "Select the native host path style in the read-only inventory CLI, preserve POSIX and Worktrees v5 behavior, and publish the material patch with version 0.5.4 through protected independent review.",
+    "nonGoals": [
+      "Do not change the v5 schema, placement, leases, ownership or cleanup authority.",
+      "Do not change adopted copies or source pins in consumer repositories."
+    ],
+    "complexity": "S",
+    "estimatedMinutes": 15,
+    "budgets": {
+      "maxImplementationFiles": 3,
+      "maxAffectedComponents": 2,
+      "maxPublicInterfaceChanges": 0,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Pass the existing native OS path style to inventory, consistent with the planner. Exercise the real inventory CLI with mocked observations on both host styles; retain the pure Windows/POSIX inventory and layout tests.",
+      "components": [
+        {
+          "name": "native inventory CLI",
+          "paths": [
+            "operations/conformance.py",
+            "operations/conformance_test.py"
+          ]
+        },
+        {
+          "name": "material patch version",
+          "paths": [
+            "VERSION"
+          ]
+        }
+      ],
+      "responsibilityChanges": false,
+      "interfaceChanges": [],
+      "dataChanges": [],
+      "ui": {
+        "impact": "none",
+        "states": [],
+        "evidence": []
+      },
+      "rollback": "Use a protected revert of the material patch; preserve all observed registrations and unknown work."
+    },
+    "runtimeDependencies": [],
+    "validation": [
+      {
+        "criterion": "AC-01",
+        "commands": [
+          "python3 operations/conformance_test.py"
+        ],
+        "evidence": "The Windows CLI probe fails with the unmodified implementation; both native styles produce valid v5 inventory after the repair."
+      },
+      {
+        "criterion": "AC-02",
+        "commands": [
+          "./project/governance-check.sh",
+          "python3 -m json.tool models/worktrees.schema.json",
+          "git diff --check"
+        ],
+        "evidence": "The existing conformance suite, native governance and protected required checks remain mandatory. Independent exact-head approval controls merge."
+      }
+    ]
+  }
+}

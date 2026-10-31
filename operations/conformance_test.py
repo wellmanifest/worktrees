@@ -4,7 +4,14 @@ import tempfile
 import unittest
 import json
 import re
+import sys
 from pathlib import Path
+from contextlib import redirect_stdout
+from io import StringIO
+from types import SimpleNamespace
+from unittest import mock
+
+import conformance
 
 from conformance import (
     feature_probe,
@@ -17,6 +24,33 @@ from conformance import (
 
 
 class WorktreeConformanceTest(unittest.TestCase):
+    def test_inventory_cli_selects_native_path_style(self):
+        for host, style, primary in (
+            ("posix", "posix", "/Code Projects/worktrees"),
+            ("nt", "windows", "C:/Code Projects/worktrees"),
+        ):
+            with self.subTest(host=host):
+                output = StringIO()
+                with (
+                    mock.patch.object(conformance, "os", SimpleNamespace(name=host)),
+                    mock.patch.object(conformance, "resolve_primary_checkout", return_value=primary),
+                    mock.patch.object(conformance, "registered_worktrees", return_value=[
+                        {"path": primary, "branch": "main"},
+                    ]),
+                    mock.patch.object(sys, "argv", [
+                        "conformance.py", "inventory", "--repository", "example/worktrees",
+                        "--repository-name", "worktrees", "--from-worktree", ".",
+                    ]),
+                    redirect_stdout(output),
+                ):
+                    result = conformance.main()
+                self.assertEqual(result, 0)
+                record = json.loads(output.getvalue())
+                self.assertEqual(record["pathStyle"], style)
+                self.assertTrue(record["readOnly"])
+                self.assertEqual(record["entries"][0]["classification"], "primary")
+                self.assertEqual(validate(record), [])
+
     def test_inventory_preserves_observed_repository_names(self):
         for style, root in (("posix", "/workspace"), ("windows", "C:/workspace")):
             for name in (".github", "Repo_Name.v2", "my repo", "repo--legacy"):
