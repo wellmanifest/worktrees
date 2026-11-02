@@ -2,7 +2,7 @@
 
 - **ID**: ticket-022
 - **Owner**: tom
-- **Status**: IN_PROGRESS
+- **Status**: DONE
 - **Workflow state**: EDIT
 - **Created**: 2026-10-17
 

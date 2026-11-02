@@ -105,16 +105,16 @@ class WorktreeConformanceTest(unittest.TestCase):
             repository_name="new-project",
             ticket="ticket-127",
             slug="worktrees-standard",
-            primary_checkout="/home/tom/github/wellmanifest/new-project",
+            primary_checkout="/srv/workspace/wellmanifest/new-project",
         )
         self.assertEqual(record["branch"], "ticket/127-worktrees-standard")
         self.assertEqual(
             record["worktreePath"],
-            "/home/tom/github/wellmanifest/new-project/.worktrees/ticket-127--worktrees-standard",
+            "/srv/workspace/wellmanifest/new-project/.worktrees/ticket-127--worktrees-standard",
         )
         self.assertEqual(
             record["leasePath"],
-            "/home/tom/github/wellmanifest/new-project/.subactor/leases/"
+            "/srv/workspace/wellmanifest/new-project/.subactor/leases/"
             "ticket-127--worktrees-standard.json",
         )
         self.assertEqual(record["linkMode"], "relative")
