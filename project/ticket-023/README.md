@@ -2,7 +2,7 @@
 
 - **ID**: ticket-023
 - **Owner**: agent:codex
-- **Status**: IN_PROGRESS
+- **Status**: DONE
 - **Workflow state**: PUBLICATION
 
 SESSION_EXECUTION_AUTHORIZATION: the user requested execution, tests, repair and
