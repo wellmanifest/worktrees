@@ -1,0 +1,74 @@
+{
+  "schema": "new-project.intent/v3",
+  "ticket": "ticket-025",
+  "summary": "Harden worktree record validation and git selector isolation",
+  "workstream": "integration",
+  "classification": {
+    "kind": "BUG",
+    "priority": "P1",
+    "origin": "regression"
+  },
+  "allowedPaths": [
+    "project/ticket-025/**",
+    "TODO.md",
+    "project/TICKETS.md",
+    "operations/**"
+  ],
+  "forbiddenPaths": [
+    "project/ticket-*/user-*.md"
+  ],
+  "stacks": [],
+  "dependsOn": [],
+  "conflictsWith": [],
+  "integrationTicket": null,
+  "delivery": {
+    "acceptedBaseSha": "db316b5a29c241d700eab8eae8369ceca0c1d375",
+    "targetBranch": "main",
+    "outcome": "Bring single-file operations/conformance.py below 500 lines, strip inherited GIT_* selectors in _git_output for registered_worktrees and resolve_primary_checkout, prevent AttributeError/TypeError crashes on malformed records, enforce repository and entry field types, and reject duplicate JSON keys and symlinked record inputs.",
+    "nonGoals": [
+      "No breaking changes to wellmanifest.worktrees/v5 JSON Schema or standalone bundler compatibility."
+    ],
+    "complexity": "S",
+    "estimatedMinutes": 30,
+    "budgets": {
+      "maxImplementationFiles": 5,
+      "maxAffectedComponents": 1,
+      "maxPublicInterfaceChanges": 0,
+      "maxRuntimeDependencies": 0
+    },
+    "architecture": {
+      "status": "accepted",
+      "decision": "Keep operations/conformance.py self-contained below 500 lines so downstream bundlers (worktree_path_check.py) remain single-file compatible while hardening validation and GIT_* environment isolation.",
+      "components": [
+        {
+          "name": "worktrees-conformance",
+          "paths": [
+            "operations/conformance.py",
+            "operations/conformance_hardening_test.py",
+            "operations/conformance_test.py"
+          ]
+        }
+      ],
+      "responsibilityChanges": false,
+      "interfaceChanges": [],
+      "dataChanges": [],
+      "ui": {
+        "impact": "none",
+        "states": [],
+        "evidence": []
+      },
+      "rollback": "Revert the ticket-025 commit on main."
+    },
+    "runtimeDependencies": [],
+    "validation": [
+      {
+        "criterion": "AC-01",
+        "commands": [
+          "python3 operations/conformance_test.py",
+          "./project/governance-check.sh"
+        ],
+        "evidence": "Domain conformance tests, <500-line check, and governance checks pass."
+      }
+    ]
+  }
+}
