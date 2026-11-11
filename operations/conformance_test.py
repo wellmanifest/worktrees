@@ -1,18 +1,17 @@
+import json
 import os
+import re
 import subprocess
+import sys
 import tempfile
 import unittest
-import json
-import re
-import sys
-from pathlib import Path
 from contextlib import redirect_stdout
 from io import StringIO
+from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
 import conformance
-
 from conformance import (
     feature_probe,
     inventory,
@@ -21,6 +20,9 @@ from conformance import (
     validate,
     validate_filesystem,
 )
+from conformance_hardening_test import WorktreeHardeningTest
+
+__all__ = ["WorktreeConformanceTest", "WorktreeHardeningTest"]
 
 
 class WorktreeConformanceTest(unittest.TestCase):
@@ -359,7 +361,7 @@ class WorktreeConformanceTest(unittest.TestCase):
                        GIT_WORK_TREE=temporary, GIT_COMMON_DIR=temporary)
             result = subprocess.run(
                 ["python3", str(script), "feature-probe", "--from-worktree", repository],
-                cwd=temporary, env=env, capture_output=True, text=True,
+                cwd=temporary, env=env, capture_output=True, text=True, check=False,
             )
             self.assertEqual(json.loads(result.stdout), expected)
             self.assertEqual(result.returncode, 0 if expected["supported"] else 1)
